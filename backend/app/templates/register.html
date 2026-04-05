@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Register | Medication Reminder System{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Create Account</h1>
+    <p class="muted">Start by creating a simple account for your medication dashboard.</p>
+    <form class="stack" data-auth-form="register">
+        <label>
+            Username
+            <input type="text" name="username" placeholder="student1" required>
+        </label>
+        <label>
+            Email
+            <input type="email" name="email" placeholder="student1@example.com" required>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" placeholder="Create password" required>
+        </label>
+        <button class="button primary" type="submit">Register</button>
+        <p class="form-message" data-form-message></p>
+    </form>
+</section>
+{% endblock %}

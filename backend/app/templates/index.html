@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome | Medication Reminder System{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <p class="eyebrow">Version 1 Prototype</p>
+        <h1>Track medications, schedules, and adherence in one simple app.</h1>
+        <p>
+            This prototype lets users register, log in, add medications, schedule reminders,
+            mark medication as taken, and review history through a lightweight Flask backend.
+        </p>
+        <div class="button-row">
+            <a class="button primary" href="{{ url_for('pages.register_page') }}">Create Account</a>
+            <a class="button secondary" href="{{ url_for('pages.login_page') }}">Login</a>
+        </div>
+    </div>
+    <div class="hero-card">
+        <h2>Core Features</h2>
+        <ul>
+            <li>User registration and login</li>
+            <li>Medication management</li>
+            <li>Schedule creation</li>
+            <li>Medication adherence tracking</li>
+            <li>REST API for backend integration</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Medication Reminder System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container nav-row">
+            <a class="brand" href="{{ url_for('pages.home') }}">Medication Reminder System</a>
+            <nav class="nav-links">
+                <a href="{{ url_for('pages.home') }}">Home</a>
+                <a href="{{ url_for('pages.login_page') }}">Login</a>
+                <a href="{{ url_for('pages.register_page') }}">Register</a>
+                <a href="{{ url_for('pages.dashboard') }}">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

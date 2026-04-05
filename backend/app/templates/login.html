@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Medication Reminder System{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Login</h1>
+    <p class="muted">Use your username and password to open the dashboard.</p>
+    <form class="stack" data-auth-form="login">
+        <label>
+            Username
+            <input type="text" name="username" placeholder="student1" required>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" placeholder="Enter password" required>
+        </label>
+        <button class="button primary" type="submit">Login</button>
+        <p class="form-message" data-form-message></p>
+    </form>
+</section>
+{% endblock %}

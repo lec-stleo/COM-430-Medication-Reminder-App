@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Medication Reminder System{% endblock %}
+
+{% block content %}
+<section class="dashboard-header">
+    <div>
+        <p class="eyebrow">Patient Dashboard</p>
+        <h1 id="welcomeMessage">Medication Overview</h1>
+        <p class="muted">Create medications, schedule reminders, and monitor adherence.</p>
+    </div>
+    <button class="button secondary" id="logoutButton" type="button">Logout</button>
+</section>
+
+<section class="grid">
+    <article class="panel">
+        <h2>Add Medication</h2>
+        <form class="stack" id="medicationForm">
+            <label>
+                Name
+                <input type="text" name="name" placeholder="Ibuprofen" required>
+            </label>
+            <label>
+                Dosage
+                <input type="text" name="dosage" placeholder="200mg" required>
+            </label>
+            <label>
+                Medication Status
+                <select name="med_status" required>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </label>
+            <label>
+                Photo Path
+                <input type="text" name="photo_path" placeholder="images/pill-reference.jpg">
+            </label>
+            <label>
+                Notes
+                <textarea name="notes" rows="3" placeholder="Take with food"></textarea>
+            </label>
+            <button class="button primary" type="submit">Save Medication</button>
+        </form>
+    </article>
+
+    <article class="panel">
+        <h2>Schedule Medication</h2>
+        <form class="stack" id="scheduleForm">
+            <label>
+                Medication
+                <select name="medication_id" id="medicationSelect" required>
+                    <option value="">Select medication</option>
+                </select>
+            </label>
+            <label>
+                Date
+                <input type="date" name="scheduled_date" required>
+            </label>
+            <label>
+                Time
+                <input type="time" name="scheduled_time" required>
+            </label>
+            <label>
+                Frequency
+                <select name="frequency" required>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="as-needed">As Needed</option>
+                    <option value="one-time">One Time</option>
+                </select>
+            </label>
+            <label>
+                Start Date
+                <input type="date" name="start_date">
+            </label>
+            <label>
+                End Date
+                <input type="date" name="end_date">
+            </label>
+            <label>
+                Reminder Status
+                <select name="reminder_status" required>
+                    <option value="enabled">Enabled</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </label>
+            <button class="button primary" type="submit">Create Schedule</button>
+        </form>
+    </article>
+</section>
+
+<section class="grid">
+    <article class="panel">
+        <h2>Medications</h2>
+        <div id="medicationList" class="list"></div>
+    </article>
+
+    <article class="panel">
+        <h2>Schedules</h2>
+        <div id="scheduleList" class="list"></div>
+    </article>
+</section>
+
+<section class="panel">
+    <h2>Medication History</h2>
+    <div id="historyList" class="list"></div>
+</section>
+{% endblock %}
