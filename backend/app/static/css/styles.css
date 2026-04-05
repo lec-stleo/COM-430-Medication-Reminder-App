@@ -1,0 +1,266 @@
+:root {
+    --bg: #e7e7e7;
+    --surface: #fbfbfb;
+    --surface-strong: #f1f1f1;
+    --border: #c9c9c9;
+    --text: #222222;
+    --muted: #6a6a6a;
+    --primary: #5f5f5f;
+    --primary-dark: #434343;
+    --accent: #8b8b8b;
+    --danger: #7a3d3d;
+    --shadow: 0 18px 45px rgba(34, 34, 34, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(125, 125, 125, 0.16), transparent 28%),
+        linear-gradient(180deg, #f4f4f4 0%, var(--bg) 100%);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.container {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+}
+
+.site-header {
+    background: rgba(255, 253, 248, 0.9);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+}
+
+.nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+
+.brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.95rem;
+}
+
+.hero,
+.grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.hero {
+    grid-template-columns: 2fr 1fr;
+    padding: 3rem 0;
+    align-items: center;
+}
+
+.hero-card,
+.panel,
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.hero-card,
+.panel {
+    padding: 1.5rem;
+}
+
+.hero-copy h1,
+.auth-card h1,
+.dashboard-header h1 {
+    margin-top: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.1;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.button-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.button {
+    border: none;
+    border-radius: 999px;
+    padding: 0.8rem 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.button:hover {
+    transform: translateY(-1px);
+}
+
+.button.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.button.primary:hover {
+    background: var(--primary-dark);
+}
+
+.button.secondary {
+    background: var(--surface-strong);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.auth-card {
+    width: min(520px, 100%);
+    margin: 3rem auto;
+    padding: 2rem;
+}
+
+.stack {
+    display: grid;
+    gap: 1rem;
+}
+
+label {
+    display: grid;
+    gap: 0.4rem;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font: inherit;
+    background: white;
+}
+
+.muted,
+.form-message,
+.empty-state {
+    color: var(--muted);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0 1rem;
+}
+
+.grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.5rem;
+}
+
+.list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    background: var(--surface-strong);
+}
+
+.card h3,
+.card p {
+    margin: 0 0 0.45rem;
+}
+
+.status {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    background: rgba(95, 95, 95, 0.12);
+    color: var(--primary-dark);
+}
+
+.status.taken {
+    background: rgba(80, 80, 80, 0.18);
+}
+
+.status.pending {
+    background: rgba(139, 139, 139, 0.18);
+    color: #5f5f5f;
+}
+
+.inline-actions {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    margin-top: 0.8rem;
+}
+
+.small-button {
+    border: none;
+    padding: 0.55rem 0.9rem;
+    border-radius: 10px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.secondary-action {
+    background: #7a7a7a;
+}
+
+.small-button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.error {
+    color: var(--danger);
+}
+
+@media (max-width: 768px) {
+    .hero,
+    .grid,
+    .dashboard-header,
+    .nav-row {
+        grid-template-columns: 1fr;
+        display: grid;
+    }
+
+    .nav-links,
+    .button-row,
+    .inline-actions {
+        flex-wrap: wrap;
+    }
+}
