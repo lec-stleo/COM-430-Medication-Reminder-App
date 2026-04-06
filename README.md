@@ -94,7 +94,7 @@ COM-430-Medication-Reminder-App/
 
 ## Database Schema
 
-The database schema is stored in [backend/app/data/schema.sql](/Volumes/home/Documents/Gitea/COM-430-Medication-Reminder-App/backend/app/data/schema.sql).
+The database schema is stored in backend/app/data/schema.sql
 
 ### Tables
 
