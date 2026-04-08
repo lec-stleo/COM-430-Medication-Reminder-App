@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request, session
 
+from ..services.history_service import list_history_for_user
 from ..services.medication_service import get_medication_for_user
 from ..services.schedule_service import (
     create_schedule,
@@ -108,3 +109,10 @@ def skip_schedule(schedule_id):
             "schedule": dict(updated_schedule),
         }
     )
+
+
+@schedule_bp.get("/history")
+@login_required
+def history():
+    history_items = list_history_for_user(session["user_id"])
+    return jsonify({"history": history_items})
