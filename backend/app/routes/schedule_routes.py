@@ -4,6 +4,7 @@ from ..services.medication_service import get_medication_for_user
 from ..services.schedule_service import (
     create_schedule,
     list_schedules_for_user,
+    update_schedule_action,
 )
 from .auth_routes import login_required
 
@@ -61,3 +62,49 @@ def add_schedule():
             "schedule": schedule,
         }
     ), 201
+
+
+@schedule_bp.patch("/schedules/<int:schedule_id>/take")
+@login_required
+def take_schedule(schedule_id):
+    data = request.get_json(silent=True) or {}
+    notes = (data.get("notes") or "").strip() or None
+
+    updated_schedule = update_schedule_action(session["user_id"], schedule_id, "taken", notes)
+    if not updated_schedule:
+        return jsonify({"error": "Schedule not found."}), 404
+
+    current_app.logger.info(
+        "Schedule %s marked as taken by user %s",
+        schedule_id,
+        session["user_id"],
+    )
+    return jsonify(
+        {
+            "message": "Medication marked as taken.",
+            "schedule": dict(updated_schedule),
+        }
+    )
+
+
+@schedule_bp.patch("/schedules/<int:schedule_id>/skip")
+@login_required
+def skip_schedule(schedule_id):
+    data = request.get_json(silent=True) or {}
+    notes = (data.get("notes") or "").strip() or None
+
+    updated_schedule = update_schedule_action(session["user_id"], schedule_id, "skipped", notes)
+    if not updated_schedule:
+        return jsonify({"error": "Schedule not found."}), 404
+
+    current_app.logger.info(
+        "Schedule %s marked as skipped by user %s",
+        schedule_id,
+        session["user_id"],
+    )
+    return jsonify(
+        {
+            "message": "Medication marked as skipped.",
+            "schedule": dict(updated_schedule),
+        }
+    )
