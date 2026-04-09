@@ -1,10 +1,12 @@
+"""Application factory and logging configuration for the Flask app."""
+
 import logging
 import os
 
 from flask import Flask
 
 from .config import Config
-from .db import close_db, init_app as init_db_app
+from .db import close_db, init_app as init_db_app, init_db
 from .routes.auth_routes import auth_bp
 from .routes.medication_routes import medication_bp
 from .routes.pages import pages_bp
@@ -38,8 +40,6 @@ def create_app(config_class=Config):
     @app.cli.command("init-db")
     def init_db_command():
         """Create database tables from the schema file."""
-        from .db import init_db
-
         init_db()
         app.logger.info("Database initialized.")
         print("Database initialized.")

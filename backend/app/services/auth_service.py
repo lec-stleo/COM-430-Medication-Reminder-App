@@ -1,9 +1,12 @@
+"""Authentication-related data access helpers."""
+
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db
 
 
 def create_user(username, email, password):
+    """Insert a new user record and return the created user identifier."""
     db = get_db()
     # pbkdf2 is widely supported, which avoids platform-specific issues with scrypt.
     password_hash = generate_password_hash(password, method="pbkdf2:sha256")
@@ -19,6 +22,7 @@ def create_user(username, email, password):
 
 
 def get_user_by_username(username):
+    """Fetch a full user record by username."""
     db = get_db()
     return db.execute(
         "SELECT * FROM users WHERE username = ?",
@@ -27,6 +31,7 @@ def get_user_by_username(username):
 
 
 def get_user_by_email(email):
+    """Fetch a full user record by email address."""
     db = get_db()
     return db.execute(
         "SELECT * FROM users WHERE email = ?",
@@ -35,6 +40,7 @@ def get_user_by_email(email):
 
 
 def get_user_by_id(user_id):
+    """Fetch a public-facing user record by its numeric identifier."""
     db = get_db()
     return db.execute(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
@@ -43,6 +49,7 @@ def get_user_by_id(user_id):
 
 
 def get_public_user_by_username(username):
+    """Fetch a public-facing user record by username."""
     db = get_db()
     return db.execute(
         "SELECT id, username, email, created_at FROM users WHERE username = ?",
@@ -51,6 +58,7 @@ def get_public_user_by_username(username):
 
 
 def verify_user(username, password):
+    """Return the user record when the supplied credentials are valid."""
     user = get_user_by_username(username)
     if user and check_password_hash(user["password_hash"], password):
         return user

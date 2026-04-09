@@ -1,9 +1,11 @@
-from ..db import get_db
+"""Reminder history data access helpers."""
+
+from ..db import fetch_all_dicts
 
 
 def list_history_for_user(user_id):
-    db = get_db()
-    rows = db.execute(
+    """Return reminder log entries for a given user ordered by newest first."""
+    return fetch_all_dicts(
         """
         SELECT
             rl.id,
@@ -22,5 +24,4 @@ def list_history_for_user(user_id):
         ORDER BY rl.action_at DESC
         """,
         (user_id,),
-    ).fetchall()
-    return [dict(row) for row in rows]
+    )

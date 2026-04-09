@@ -1,4 +1,6 @@
-from app import create_app
+"""Flask development entry point for the medication reminder app."""
+
+from backend.app import create_app
 
 
 app = create_app()

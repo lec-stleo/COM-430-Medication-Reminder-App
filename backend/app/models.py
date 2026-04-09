@@ -1,9 +1,11 @@
-from dataclasses import dataclass
-from typing import Optional
+"""Entity field definitions used to document the app's data model."""
+
+from typing import Optional, TypedDict
 
 
-@dataclass
-class User:
+class User(TypedDict):
+    """Dictionary shape for user records."""
+
     id: int
     username: str
     email: str
@@ -11,8 +13,9 @@ class User:
     created_at: str
 
 
-@dataclass
-class Medication:
+class Medication(TypedDict):
+    """Dictionary shape for medication records."""
+
     id: int
     user_id: int
     name: str
@@ -23,8 +26,9 @@ class Medication:
     created_at: str
 
 
-@dataclass
-class Schedule:
+class Schedule(TypedDict):
+    """Dictionary shape for schedule records."""
+
     id: int
     medication_id: int
     scheduled_date: str
@@ -38,8 +42,9 @@ class Schedule:
     created_at: str
 
 
-@dataclass
-class ReminderLog:
+class ReminderLog(TypedDict):
+    """Dictionary shape for reminder log records."""
+
     id: int
     schedule_id: int
     medication_id: int

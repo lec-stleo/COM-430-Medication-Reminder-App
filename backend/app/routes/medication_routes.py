@@ -1,3 +1,5 @@
+"""Medication management API routes."""
+
 from flask import Blueprint, current_app, jsonify, request, session
 
 from ..services.medication_service import (
@@ -14,6 +16,7 @@ medication_bp = Blueprint("medications", __name__)
 @medication_bp.get("/medications")
 @login_required
 def list_medications():
+    """Return all medications that belong to the active user."""
     medications = list_medications_for_user(session["user_id"])
     return jsonify({"medications": medications})
 
@@ -21,6 +24,7 @@ def list_medications():
 @medication_bp.post("/medications")
 @login_required
 def add_medication():
+    """Create a new medication entry for the active user."""
     data = request.get_json(silent=True) or request.form
     name = (data.get("name") or "").strip()
     dosage = (data.get("dosage") or "").strip()
@@ -33,11 +37,13 @@ def add_medication():
 
     medication_id = create_medication(
         session["user_id"],
-        name,
-        dosage,
-        med_status,
-        photo_path,
-        notes,
+        {
+            "name": name,
+            "dosage": dosage,
+            "med_status": med_status,
+            "photo_path": photo_path,
+            "notes": notes,
+        },
     )
     medication = get_medication_for_user(session["user_id"], medication_id)
     current_app.logger.info("Medication created for user %s: %s", session["user_id"], name)

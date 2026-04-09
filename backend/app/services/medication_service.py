@@ -1,9 +1,12 @@
-from ..db import get_db
+"""Medication data access helpers."""
+# pylint: disable=duplicate-code
+
+from ..db import fetch_all_dicts, get_db
 
 
 def list_medications_for_user(user_id):
-    db = get_db()
-    rows = db.execute(
+    """Return every medication that belongs to the given user."""
+    return fetch_all_dicts(
         """
         SELECT
             m.id,
@@ -21,24 +24,32 @@ def list_medications_for_user(user_id):
         ORDER BY m.created_at DESC
         """,
         (user_id,),
-    ).fetchall()
-    return [dict(row) for row in rows]
+    )
 
 
-def create_medication(user_id, name, dosage, med_status, photo_path, notes):
+def create_medication(user_id, medication_data):
+    """Create a medication record for the given user and return its identifier."""
     db = get_db()
     cursor = db.execute(
         """
         INSERT INTO medications (user_id, name, dosage, med_status, photo_path, notes)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (user_id, name, dosage, med_status, photo_path, notes),
+        (
+            user_id,
+            medication_data["name"],
+            medication_data["dosage"],
+            medication_data["med_status"],
+            medication_data["photo_path"],
+            medication_data["notes"],
+        ),
     )
     db.commit()
     return cursor.lastrowid
 
 
 def get_medication_for_user(user_id, medication_id):
+    """Fetch one medication record owned by the given user."""
     db = get_db()
     return db.execute(
         """

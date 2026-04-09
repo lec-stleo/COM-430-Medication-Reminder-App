@@ -1,3 +1,6 @@
+"""Automated tests for the medication reminder Flask application."""
+
+from contextlib import ExitStack
 import os
 import tempfile
 import unittest
@@ -6,30 +9,33 @@ from backend.app import create_app
 from backend.app.config import Config
 
 
-class TestConfig(Config):
-    TESTING = True
-
-
 class MedicationReminderAppTests(unittest.TestCase):
+    """End-to-end and route-level tests for the application."""
+
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.db_path = os.path.join(self.temp_dir.name, "test.db")
+        """Create an isolated app instance backed by a temporary SQLite file."""
+        self.resource_stack = ExitStack()
+        self.addCleanup(self.resource_stack.close)
+        self.temp_dir = self.resource_stack.enter_context(tempfile.TemporaryDirectory())
+        self.db_path = os.path.join(self.temp_dir, "test.db")
 
-        class LocalTestConfig(TestConfig):
-            pass
+        local_test_config = type(
+            "LocalTestConfig",
+            (Config,),
+            {
+                "TESTING": True,
+                "DATABASE_PATH": self.db_path,
+                "INSTANCE_DIR": self.temp_dir,
+                "LOG_DIR": self.temp_dir,
+                "SECRET_KEY": "test-secret",
+            },
+        )
 
-        LocalTestConfig.DATABASE_PATH = self.db_path
-        LocalTestConfig.INSTANCE_DIR = self.temp_dir.name
-        LocalTestConfig.LOG_DIR = self.temp_dir.name
-        LocalTestConfig.SECRET_KEY = "test-secret"
-
-        self.app = create_app(LocalTestConfig)
+        self.app = create_app(local_test_config)
         self.client = self.app.test_client()
 
-    def tearDown(self):
-        self.temp_dir.cleanup()
-
     def register_and_login(self):
+        """Register the default test user and keep the resulting session."""
         response = self.client.post(
             "/api/auth/register",
             json={
@@ -41,11 +47,13 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_health_route(self):
+        """The health endpoint should return an OK status payload."""
         response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
 
     def test_end_to_end_medication_flow(self):
+        """A user can register, add a medication, schedule it, and mark it taken."""
         self.register_and_login()
 
         user_response = self.client.get("/api/auth/student1")
@@ -93,6 +101,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(history[0]["medication_name"], "Ibuprofen")
 
     def test_skip_schedule_creates_history_entry(self):
+        """Skipping a schedule should update its status and create a history row."""
         self.register_and_login()
 
         medication_response = self.client.post(

@@ -1,9 +1,11 @@
-from ..db import get_db
+"""Schedule and adherence data access helpers."""
+
+from ..db import fetch_all_dicts, get_db
 
 
 def list_schedules_for_user(user_id):
-    db = get_db()
-    rows = db.execute(
+    """Return all schedules owned by the given user."""
+    return fetch_all_dicts(
         """
         SELECT
             s.id,
@@ -25,19 +27,11 @@ def list_schedules_for_user(user_id):
         ORDER BY s.scheduled_date ASC, s.scheduled_time ASC
         """,
         (user_id,),
-    ).fetchall()
-    return [dict(row) for row in rows]
+    )
 
 
-def create_schedule(
-    medication_id,
-    scheduled_date,
-    scheduled_time,
-    frequency,
-    start_date,
-    end_date,
-    reminder_status,
-):
+def create_schedule(medication_id, schedule_data):
+    """Create a schedule record and return its identifier."""
     db = get_db()
     cursor = db.execute(
         """
@@ -54,12 +48,12 @@ def create_schedule(
         """,
         (
             medication_id,
-            scheduled_date,
-            scheduled_time,
-            frequency,
-            start_date,
-            end_date,
-            reminder_status,
+            schedule_data["scheduled_date"],
+            schedule_data["scheduled_time"],
+            schedule_data["frequency"],
+            schedule_data["start_date"],
+            schedule_data["end_date"],
+            schedule_data["reminder_status"],
         ),
     )
     db.commit()
@@ -67,6 +61,7 @@ def create_schedule(
 
 
 def get_schedule_for_user(user_id, schedule_id):
+    """Fetch one schedule record owned by the given user."""
     db = get_db()
     return db.execute(
         """
@@ -82,6 +77,7 @@ def get_schedule_for_user(user_id, schedule_id):
 
 
 def update_schedule_action(user_id, schedule_id, action, notes=None):
+    """Update a schedule status and record the adherence action in history."""
     db = get_db()
     schedule = get_schedule_for_user(user_id, schedule_id)
     if not schedule:

@@ -1,3 +1,5 @@
+"""Schedule, adherence, and history API routes."""
+
 from flask import Blueprint, current_app, jsonify, request, session
 
 from ..services.history_service import list_history_for_user
@@ -16,6 +18,7 @@ schedule_bp = Blueprint("schedules", __name__)
 @schedule_bp.get("/schedules")
 @login_required
 def list_schedules():
+    """Return all schedules that belong to the active user."""
     schedules = list_schedules_for_user(session["user_id"])
     return jsonify({"schedules": schedules})
 
@@ -23,6 +26,7 @@ def list_schedules():
 @schedule_bp.post("/schedules")
 @login_required
 def add_schedule():
+    """Create a medication schedule for the active user."""
     data = request.get_json(silent=True) or request.form
     medication_id = data.get("medication_id")
     scheduled_date = (data.get("scheduled_date") or "").strip()
@@ -41,12 +45,14 @@ def add_schedule():
 
     schedule_id = create_schedule(
         medication_id,
-        scheduled_date,
-        scheduled_time,
-        frequency,
-        start_date,
-        end_date,
-        reminder_status,
+        {
+            "scheduled_date": scheduled_date,
+            "scheduled_time": scheduled_time,
+            "frequency": frequency,
+            "start_date": start_date,
+            "end_date": end_date,
+            "reminder_status": reminder_status,
+        },
     )
     current_app.logger.info(
         "Schedule created for medication %s by user %s",
@@ -68,6 +74,7 @@ def add_schedule():
 @schedule_bp.patch("/schedules/<int:schedule_id>/take")
 @login_required
 def take_schedule(schedule_id):
+    """Mark a scheduled dose as taken and store an adherence log."""
     data = request.get_json(silent=True) or {}
     notes = (data.get("notes") or "").strip() or None
 
@@ -91,6 +98,7 @@ def take_schedule(schedule_id):
 @schedule_bp.patch("/schedules/<int:schedule_id>/skip")
 @login_required
 def skip_schedule(schedule_id):
+    """Mark a scheduled dose as skipped and store an adherence log."""
     data = request.get_json(silent=True) or {}
     notes = (data.get("notes") or "").strip() or None
 
@@ -114,5 +122,6 @@ def skip_schedule(schedule_id):
 @schedule_bp.get("/history")
 @login_required
 def history():
+    """Return medication adherence history for the active user."""
     history_items = list_history_for_user(session["user_id"])
     return jsonify({"history": history_items})

@@ -1,3 +1,5 @@
+"""Database connection helpers and schema initialization functions."""
+
 import sqlite3
 from pathlib import Path
 
@@ -16,6 +18,7 @@ def get_db():
 
 
 def close_db(_error=None):
+    """Close the active request database connection when one exists."""
     db = g.pop("db", None)
     if db is not None:
         db.close()
@@ -31,8 +34,17 @@ def init_db():
 
 
 def init_app(app):
+    """Attach database lifecycle hooks to the Flask application."""
+
     @app.before_request
     def ensure_database_exists():
+        """Create the SQLite database file before the first request if missing."""
         if not Path(app.config["DATABASE_PATH"]).exists():
             with app.app_context():
                 init_db()
+
+def fetch_all_dicts(query, params=()):
+    """Run a SELECT query and return all rows as plain dictionaries."""
+    db = get_db()
+    rows = db.execute(query, params).fetchall()
+    return [dict(row) for row in rows]
