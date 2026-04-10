@@ -26,7 +26,7 @@ jobs:
 
       - name: Start app and verify health endpoint
         run: |
-          python backend/run.py > flask.log 2>&1 &
+          PYTHONPATH=. python -m backend.run > flask.log 2>&1 &
           APP_PID=$!
           trap "kill $APP_PID" EXIT
 
