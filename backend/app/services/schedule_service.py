@@ -84,17 +84,26 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
         return None
 
     schedule_status = "taken" if action == "taken" else "skipped"
-    last_taken_at = "CURRENT_TIMESTAMP" if action == "taken" else "NULL"
-
-    db.execute(
-        f"""
-        UPDATE schedules
-        SET status = ?,
-            last_taken_at = {last_taken_at}
-        WHERE id = ?
-        """,
-        (schedule_status, schedule_id),
-    )
+    if action == "taken":
+        db.execute(
+            """
+            UPDATE schedules
+            SET status = ?,
+                last_taken_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (schedule_status, schedule_id),
+        )
+    else:
+        db.execute(
+            """
+            UPDATE schedules
+            SET status = ?,
+                last_taken_at = NULL
+            WHERE id = ?
+            """,
+            (schedule_status, schedule_id),
+        )
     db.execute(
         """
         INSERT INTO reminder_logs (schedule_id, medication_id, user_id, action, notes)
