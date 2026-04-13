@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS notification_logs;
 DROP TABLE IF EXISTS reminder_logs;
 DROP TABLE IF EXISTS schedules;
 DROP TABLE IF EXISTS medications;
@@ -49,4 +50,18 @@ CREATE TABLE reminder_logs (
     FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE,
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE notification_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    medication_id INTEGER NOT NULL,
+    schedule_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    message TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE,
+    FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE,
+    UNIQUE (schedule_id, type)
 );
