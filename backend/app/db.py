@@ -25,7 +25,7 @@ def close_db(_error=None):
 
 
 def init_db():
-    """Create all database tables using the SQL schema file."""
+    """Create all database tables using the schema file."""
     db = get_db()
     schema_path = Path(current_app.root_path) / "data" / "schema.sql"
     with open(schema_path, "r", encoding="utf-8") as schema_file:
@@ -38,10 +38,10 @@ def init_app(app):
 
     @app.before_request
     def ensure_database_exists():
-        """Create the SQLite database file before the first request if missing."""
         if not Path(app.config["DATABASE_PATH"]).exists():
             with app.app_context():
                 init_db()
+
 
 def fetch_all_dicts(query, params=()):
     """Run a SELECT query and return all rows as plain dictionaries."""

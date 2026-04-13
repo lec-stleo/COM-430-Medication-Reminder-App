@@ -4,8 +4,6 @@ from typing import Optional, TypedDict
 
 
 class User(TypedDict):
-    """Dictionary shape for user records."""
-
     id: int
     username: str
     email: str
@@ -14,8 +12,6 @@ class User(TypedDict):
 
 
 class Medication(TypedDict):
-    """Dictionary shape for medication records."""
-
     id: int
     user_id: int
     name: str
@@ -27,8 +23,6 @@ class Medication(TypedDict):
 
 
 class Schedule(TypedDict):
-    """Dictionary shape for schedule records."""
-
     id: int
     medication_id: int
     scheduled_date: str
@@ -43,8 +37,6 @@ class Schedule(TypedDict):
 
 
 class ReminderLog(TypedDict):
-    """Dictionary shape for reminder log records."""
-
     id: int
     schedule_id: int
     medication_id: int
@@ -54,9 +46,11 @@ class ReminderLog(TypedDict):
     notes: Optional[str]
 
 
-ENTITY_RELATIONSHIPS = {
-    "User": "One user can own many medications and many reminder logs.",
-    "Medication": "One medication belongs to one user and can have many schedules.",
-    "Schedule": "One schedule belongs to one medication and can produce many reminder logs.",
-    "ReminderLog": "Each reminder log belongs to one user, one medication, and one schedule.",
-}
+class NotificationLog(TypedDict):
+    id: int
+    user_id: int
+    medication_id: int
+    schedule_id: int
+    type: str
+    message: str
+    sent_at: str

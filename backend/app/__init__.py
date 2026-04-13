@@ -50,9 +50,7 @@ def create_app(config_class=Config):
 def configure_logging(app):
     """Write logs to both the console and a file for easier debugging."""
     log_path = os.path.join(app.config["LOG_DIR"], "app.log")
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
     for handler in app.logger.handlers[:]:
         handler.close()
