@@ -1,5 +1,4 @@
 """Medication data access helpers."""
-# pylint: disable=duplicate-code
 
 from ..db import fetch_all_dicts, get_db
 
@@ -10,6 +9,7 @@ def list_medications_for_user(user_id):
         """
         SELECT
             m.id,
+            m.user_id,
             m.name,
             m.dosage,
             m.med_status,
@@ -46,6 +46,38 @@ def create_medication(user_id, medication_data):
     )
     db.commit()
     return cursor.lastrowid
+
+
+def update_medication(medication_id, user_id, medication_data):
+    """Update one medication owned by the given user."""
+    db = get_db()
+    db.execute(
+        """
+        UPDATE medications
+        SET name = ?, dosage = ?, med_status = ?, photo_path = ?, notes = ?
+        WHERE id = ? AND user_id = ?
+        """,
+        (
+            medication_data["name"],
+            medication_data["dosage"],
+            medication_data["med_status"],
+            medication_data["photo_path"],
+            medication_data["notes"],
+            medication_id,
+            user_id,
+        ),
+    )
+    db.commit()
+
+
+def delete_medication(medication_id, user_id):
+    """Delete one medication owned by the given user."""
+    db = get_db()
+    db.execute(
+        "DELETE FROM medications WHERE id = ? AND user_id = ?",
+        (medication_id, user_id),
+    )
+    db.commit()
 
 
 def get_medication_for_user(user_id, medication_id):
