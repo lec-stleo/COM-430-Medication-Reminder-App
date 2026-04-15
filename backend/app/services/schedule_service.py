@@ -1,5 +1,7 @@
 """Schedule and adherence data access helpers."""
 
+from datetime import datetime
+
 from ..db import fetch_all_dicts, get_db
 
 
@@ -30,6 +32,20 @@ def list_schedules_for_user(user_id):
     )
 
 
+def list_upcoming_schedules_for_user(user_id):
+    """Return pending schedules ordered by upcoming due time."""
+    schedules = list_schedules_for_user(user_id)
+    now = datetime.utcnow()
+    return [
+        schedule
+        for schedule in schedules
+        if schedule["status"] == "pending"
+        and datetime.fromisoformat(
+            f'{schedule["scheduled_date"]}T{schedule["scheduled_time"]}:00'
+        ) >= now
+    ]
+
+
 def create_schedule(medication_id, schedule_data):
     """Create a schedule record and return its identifier."""
     db = get_db()
@@ -58,6 +74,55 @@ def create_schedule(medication_id, schedule_data):
     )
     db.commit()
     return cursor.lastrowid
+
+
+def update_schedule(schedule_id, user_id, schedule_data):
+    """Update one schedule owned by the given user."""
+    db = get_db()
+    db.execute(
+        """
+        UPDATE schedules
+        SET medication_id = ?,
+            scheduled_date = ?,
+            scheduled_time = ?,
+            frequency = ?,
+            start_date = ?,
+            end_date = ?,
+            reminder_status = ?
+        WHERE id = ?
+          AND medication_id IN (
+              SELECT id FROM medications WHERE user_id = ?
+          )
+        """,
+        (
+            schedule_data["medication_id"],
+            schedule_data["scheduled_date"],
+            schedule_data["scheduled_time"],
+            schedule_data["frequency"],
+            schedule_data["start_date"],
+            schedule_data["end_date"],
+            schedule_data["reminder_status"],
+            schedule_id,
+            user_id,
+        ),
+    )
+    db.commit()
+
+
+def delete_schedule(schedule_id, user_id):
+    """Delete one schedule owned by the given user."""
+    db = get_db()
+    db.execute(
+        """
+        DELETE FROM schedules
+        WHERE id = ?
+          AND medication_id IN (
+              SELECT id FROM medications WHERE user_id = ?
+          )
+        """,
+        (schedule_id, user_id),
+    )
+    db.commit()
 
 
 def get_schedule_for_user(user_id, schedule_id):
