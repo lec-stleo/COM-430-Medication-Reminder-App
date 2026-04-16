@@ -1,6 +1,6 @@
 """Simple notification simulation service for Version 2."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import current_app
 
@@ -16,7 +16,7 @@ def _is_due(schedule_row, now):
 
 def check_due_medications(user_id):
     """Simulate sending email and push notifications for due medications."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     due_schedules = fetch_all_dicts(
         """
         SELECT
