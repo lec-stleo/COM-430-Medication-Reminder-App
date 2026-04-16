@@ -14,6 +14,7 @@ class MedicationReminderAppTests(unittest.TestCase):
     """End-to-end and route-level tests for the application."""
 
     def setUp(self):
+        """Create an isolated app instance backed by a temporary SQLite file."""
         self.resource_stack = ExitStack()
         self.addCleanup(self.resource_stack.close)
         self.temp_dir = self.resource_stack.enter_context(tempfile.TemporaryDirectory())
@@ -36,6 +37,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def register_and_login(self):
+        """Register the default test user and keep the resulting session."""
         response = self.client.post(
             "/api/auth/register",
             json={
@@ -47,6 +49,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
     def create_medication(self, name="Ibuprofen", dosage="200mg"):
+        """Create a medication for the active test user."""
         return self.client.post(
             "/api/medications",
             json={
@@ -59,11 +62,13 @@ class MedicationReminderAppTests(unittest.TestCase):
         )
 
     def test_health_route(self):
+        """The health endpoint should return an OK status payload."""
         response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
 
     def test_registration_and_login(self):
+        """A registered user should be able to log out and log back in."""
         register_response = self.client.post(
             "/api/auth/register",
             json={
@@ -83,6 +88,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(login_response.get_json()["user"]["email"], "student1@example.com")
 
     def test_add_and_edit_medication(self):
+        """A user can add a medication and update it later."""
         self.register_and_login()
 
         medication_response = self.create_medication()
@@ -103,6 +109,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(update_response.get_json()["medication"]["dosage"], "400mg")
 
     def test_create_schedule_and_mark_taken(self):
+        """A user can create a schedule and mark it as taken."""
         self.register_and_login()
         medication_id = self.create_medication().get_json()["medication"]["id"]
 
@@ -129,8 +136,12 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(len(history_response.get_json()["history"]), 1)
 
     def test_trigger_notifications(self):
+        """A due schedule should produce simulated notification log entries."""
         self.register_and_login()
-        medication_id = self.create_medication(name="Aspirin", dosage="100mg").get_json()["medication"]["id"]
+        medication_id = self.create_medication(
+            name="Aspirin",
+            dosage="100mg",
+        ).get_json()["medication"]["id"]
         due_time = datetime.utcnow() - timedelta(minutes=1)
 
         schedule_response = self.client.post(

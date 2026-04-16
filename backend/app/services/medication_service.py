@@ -1,4 +1,5 @@
 """Medication data access helpers."""
+# pylint: disable=duplicate-code
 
 from ..db import fetch_all_dicts, get_db
 

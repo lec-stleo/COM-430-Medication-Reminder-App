@@ -26,12 +26,12 @@ def health():
 @login_required
 def trigger_notifications():
     """Run the local notification simulation for due medications."""
-    notifications = check_due_medications(session["user_id"])
+    triggered_notifications = check_due_medications(session["user_id"])
     return jsonify(
         {
             "message": "Notification check completed.",
-            "triggered_count": len(notifications),
-            "notifications": notifications,
+            "triggered_count": len(triggered_notifications),
+            "notifications": triggered_notifications,
         }
     )
 

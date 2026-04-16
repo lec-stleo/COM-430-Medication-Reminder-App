@@ -11,7 +11,7 @@ PROJECT_ROOT = BASE_DIR.parents[0]
 load_dotenv(PROJECT_ROOT / ".env")
 
 
-class Config:
+class Config:  # pylint: disable=too-few-public-methods
     """Default runtime configuration for local development and tests."""
 
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")

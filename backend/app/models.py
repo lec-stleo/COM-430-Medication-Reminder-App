@@ -4,6 +4,8 @@ from typing import Optional, TypedDict
 
 
 class User(TypedDict):
+    """Dictionary shape for user records."""
+
     id: int
     username: str
     email: str
@@ -12,6 +14,8 @@ class User(TypedDict):
 
 
 class Medication(TypedDict):
+    """Dictionary shape for medication records."""
+
     id: int
     user_id: int
     name: str
@@ -23,6 +27,8 @@ class Medication(TypedDict):
 
 
 class Schedule(TypedDict):
+    """Dictionary shape for schedule records."""
+
     id: int
     medication_id: int
     scheduled_date: str
@@ -37,6 +43,8 @@ class Schedule(TypedDict):
 
 
 class ReminderLog(TypedDict):
+    """Dictionary shape for reminder log records."""
+
     id: int
     schedule_id: int
     medication_id: int
@@ -47,6 +55,8 @@ class ReminderLog(TypedDict):
 
 
 class NotificationLog(TypedDict):
+    """Dictionary shape for notification log records."""
+
     id: int
     user_id: int
     medication_id: int

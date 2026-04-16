@@ -23,9 +23,23 @@ def _clean_medication_payload(data):
     notes = (data.get("notes") or "").strip() or None
 
     if not name or not dosage:
-        return None, jsonify({"error": "Medication name and dosage are required."}), 400
+        return (
+            None,
+            jsonify({"error": "Medication name and dosage are required."}),
+            400,
+        )
     if med_status not in {"active", "paused", "completed"}:
-        return None, jsonify({"error": "Medication status must be active, paused, or completed."}), 400
+        return (
+            None,
+            jsonify(
+                {
+                    "error": (
+                        "Medication status must be active, paused, or completed."
+                    )
+                }
+            ),
+            400,
+        )
 
     return {
         "name": name,
@@ -55,9 +69,21 @@ def add_medication():
 
     medication_id = create_medication(session["user_id"], payload)
     medication = get_medication_for_user(session["user_id"], medication_id)
-    current_app.logger.info("Medication created for user %s: %s", session["user_id"], payload["name"])
+    current_app.logger.info(
+        "Medication created for user %s: %s",
+        session["user_id"],
+        payload["name"],
+    )
 
-    return jsonify({"message": "Medication added successfully.", "medication": dict(medication)}), 201
+    return (
+        jsonify(
+            {
+                "message": "Medication added successfully.",
+                "medication": dict(medication),
+            }
+        ),
+        201,
+    )
 
 
 @medication_bp.put("/medications/<int:medication_id>")
@@ -74,7 +100,11 @@ def edit_medication(medication_id):
         return error_response, status_code
 
     update_medication(medication_id, session["user_id"], payload)
-    current_app.logger.info("Medication updated for user %s: %s", session["user_id"], medication_id)
+    current_app.logger.info(
+        "Medication updated for user %s: %s",
+        session["user_id"],
+        medication_id,
+    )
     updated = get_medication_for_user(session["user_id"], medication_id)
     return jsonify({"message": "Medication updated successfully.", "medication": dict(updated)})
 

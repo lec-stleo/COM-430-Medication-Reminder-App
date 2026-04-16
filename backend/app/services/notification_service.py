@@ -44,11 +44,20 @@ def check_due_medications(user_id):
         if not _is_due(schedule, now):
             continue
 
-        time_label = datetime.strptime(schedule["scheduled_time"], "%H:%M").strftime("%I:%M %p").lstrip("0")
-        email_message = f'EMAIL SENT: Take {schedule["name"]} {schedule["dosage"]} at {time_label}'
+        time_label = datetime.strptime(
+            schedule["scheduled_time"],
+            "%H:%M",
+        ).strftime("%I:%M %p").lstrip("0")
+        email_message = (
+            f'EMAIL SENT: Take {schedule["name"]} '
+            f'{schedule["dosage"]} at {time_label}'
+        )
         push_message = "PUSH NOTIFICATION: Time to take your medication"
 
-        for notification_type, message in (("email", email_message), ("push", push_message)):
+        for notification_type, message in (
+            ("email", email_message),
+            ("push", push_message),
+        ):
             existing = db.execute(
                 """
                 SELECT id
@@ -65,7 +74,13 @@ def check_due_medications(user_id):
                 INSERT INTO notification_logs (user_id, medication_id, schedule_id, type, message)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (user_id, schedule["medication_id"], schedule["id"], notification_type, message),
+                (
+                    user_id,
+                    schedule["medication_id"],
+                    schedule["id"],
+                    notification_type,
+                    message,
+                ),
             )
             current_app.logger.info(message)
             notifications.append(

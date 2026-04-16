@@ -133,7 +133,11 @@ def take_schedule(schedule_id):
     if not updated_schedule:
         return jsonify({"error": "Schedule not found."}), 404
 
-    current_app.logger.info("Schedule %s marked as taken by user %s", schedule_id, session["user_id"])
+    current_app.logger.info(
+        "Schedule %s marked as taken by user %s",
+        schedule_id,
+        session["user_id"],
+    )
     return jsonify({"message": "Medication marked as taken.", "schedule": dict(updated_schedule)})
 
 
@@ -148,7 +152,11 @@ def skip_schedule(schedule_id):
     if not updated_schedule:
         return jsonify({"error": "Schedule not found."}), 404
 
-    current_app.logger.info("Schedule %s marked as skipped by user %s", schedule_id, session["user_id"])
+    current_app.logger.info(
+        "Schedule %s marked as skipped by user %s",
+        schedule_id,
+        session["user_id"],
+    )
     return jsonify({"message": "Medication marked as skipped.", "schedule": dict(updated_schedule)})
 
 
