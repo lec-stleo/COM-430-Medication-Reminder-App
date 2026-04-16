@@ -63,6 +63,10 @@ function renderMedications(medications) {
             <p><strong>Photo Path:</strong> ${medication.photo_path || "No reference photo."}</p>
             <p><strong>Notes:</strong> ${medication.notes || "No notes added."}</p>
             <p><strong>Schedules:</strong> ${medication.schedule_count}</p>
+            <div class="inline-actions">
+                <button class="small-button" type="button" data-edit-medication="${medication.id}">Edit</button>
+                <button class="small-button secondary-action" type="button" data-delete-medication="${medication.id}">Delete</button>
+            </div>
         </article>
     `).join("");
 }
@@ -84,22 +88,10 @@ function renderSchedules(schedules) {
             <p><strong>Reminder Status:</strong> ${schedule.reminder_status}</p>
             <span class="status ${schedule.status}">${schedule.status}</span>
             <div class="inline-actions">
-                <button
-                    class="small-button"
-                    type="button"
-                    data-take-button="${schedule.id}"
-                    ${schedule.status !== "pending" ? "disabled" : ""}
-                >
-                    Mark as Taken
-                </button>
-                <button
-                    class="small-button secondary-action"
-                    type="button"
-                    data-skip-button="${schedule.id}"
-                    ${schedule.status !== "pending" ? "disabled" : ""}
-                >
-                    Mark as Skipped
-                </button>
+                <button class="small-button" type="button" data-take-button="${schedule.id}" ${schedule.status !== "pending" ? "disabled" : ""}>Mark as Taken</button>
+                <button class="small-button" type="button" data-edit-schedule="${schedule.id}">Edit</button>
+                <button class="small-button secondary-action" type="button" data-skip-button="${schedule.id}" ${schedule.status !== "pending" ? "disabled" : ""}>Mark as Skipped</button>
+                <button class="small-button secondary-action" type="button" data-delete-schedule="${schedule.id}">Delete</button>
             </div>
         </article>
     `).join("");
@@ -122,28 +114,47 @@ function renderHistory(history) {
     `).join("");
 }
 
+function renderNotifications(notifications) {
+    if (!notifications.length) {
+        return renderEmptyState("No notifications have been triggered yet.");
+    }
+
+    return notifications.map((item) => `
+        <article class="card">
+            <h3>${item.medication_name}</h3>
+            <p><strong>Type:</strong> ${item.type}</p>
+            <p><strong>Message:</strong> ${item.message}</p>
+            <p><strong>Sent At:</strong> ${item.sent_at || "Just now"}</p>
+        </article>
+    `).join("");
+}
+
 async function loadDashboard() {
     const welcomeMessage = document.getElementById("welcomeMessage");
     const medicationList = document.getElementById("medicationList");
     const scheduleList = document.getElementById("scheduleList");
     const historyList = document.getElementById("historyList");
+    const notificationList = document.getElementById("notificationList");
     const medicationSelect = document.getElementById("medicationSelect");
     const medicationForm = document.getElementById("medicationForm");
     const scheduleForm = document.getElementById("scheduleForm");
     const logoutButton = document.getElementById("logoutButton");
+    const triggerNotificationsButton = document.getElementById("triggerNotificationsButton");
 
     async function refreshDashboard() {
-        const [me, medications, schedules, history] = await Promise.all([
+        const [me, medications, schedules, history, notifications] = await Promise.all([
             apiRequest("/api/auth/me"),
             apiRequest("/api/medications"),
             apiRequest("/api/schedules"),
             apiRequest("/api/history"),
+            apiRequest("/api/notifications"),
         ]);
 
         welcomeMessage.textContent = `${me.user.username}'s Medication Overview`;
         medicationList.innerHTML = renderMedications(medications.medications);
         scheduleList.innerHTML = renderSchedules(schedules.schedules);
         historyList.innerHTML = renderHistory(history.history);
+        notificationList.innerHTML = renderNotifications(notifications.notifications);
 
         medicationSelect.innerHTML = `
             <option value="">Select medication</option>
@@ -171,6 +182,73 @@ async function loadDashboard() {
                 await refreshDashboard();
             });
         });
+
+        document.querySelectorAll("[data-delete-medication]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                await apiRequest(`/api/medications/${button.dataset.deleteMedication}`, {
+                    method: "DELETE",
+                });
+                await refreshDashboard();
+            });
+        });
+
+        document.querySelectorAll("[data-edit-medication]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                const medication = medications.medications.find((item) => item.id === Number(button.dataset.editMedication));
+                const name = window.prompt("Medication name", medication.name);
+                if (!name) return;
+                const dosage = window.prompt("Dosage", medication.dosage);
+                if (!dosage) return;
+                const medStatus = window.prompt("Status: active, paused, or completed", medication.med_status);
+                if (!medStatus) return;
+                const notes = window.prompt("Notes", medication.notes || "") || "";
+                await apiRequest(`/api/medications/${medication.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        name,
+                        dosage,
+                        med_status: medStatus,
+                        photo_path: medication.photo_path || "",
+                        notes,
+                    }),
+                });
+                await refreshDashboard();
+            });
+        });
+
+        document.querySelectorAll("[data-delete-schedule]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                await apiRequest(`/api/schedules/${button.dataset.deleteSchedule}`, {
+                    method: "DELETE",
+                });
+                await refreshDashboard();
+            });
+        });
+
+        document.querySelectorAll("[data-edit-schedule]").forEach((button) => {
+            button.addEventListener("click", async () => {
+                const schedule = schedules.schedules.find((item) => item.id === Number(button.dataset.editSchedule));
+                const scheduledDate = window.prompt("Scheduled date (YYYY-MM-DD)", schedule.scheduled_date);
+                if (!scheduledDate) return;
+                const scheduledTime = window.prompt("Scheduled time (HH:MM)", schedule.scheduled_time);
+                if (!scheduledTime) return;
+                const frequency = window.prompt("Frequency", schedule.frequency);
+                if (!frequency) return;
+                await apiRequest(`/api/schedules/${schedule.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        medication_id: schedule.medication_id,
+                        scheduled_date: scheduledDate,
+                        scheduled_time: scheduledTime,
+                        frequency,
+                        start_date: schedule.start_date || scheduledDate,
+                        end_date: schedule.end_date || "",
+                        reminder_status: schedule.reminder_status,
+                    }),
+                });
+                await refreshDashboard();
+            });
+        });
     }
 
     medicationForm.addEventListener("submit", async (event) => {
@@ -190,6 +268,11 @@ async function loadDashboard() {
             body: JSON.stringify(formToJson(scheduleForm)),
         });
         scheduleForm.reset();
+        await refreshDashboard();
+    });
+
+    triggerNotificationsButton.addEventListener("click", async () => {
+        await apiRequest("/api/test/trigger-notifications", { method: "POST" });
         await refreshDashboard();
     });
 

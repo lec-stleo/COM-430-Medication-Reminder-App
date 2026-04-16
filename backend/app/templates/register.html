@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Register | Medication Reminder System{% endblock %}
+{% block title %}Register | Medication Reminder System V2{% endblock %}
+{% block page_id %}register{% endblock %}
 
 {% block content %}
 <section class="auth-card">
-    <h1>Create Account</h1>
-    <p class="muted">Start by creating a simple account for your medication dashboard.</p>
+    <p class="eyebrow">Create Account</p>
+    <h1>Register for medication tracking.</h1>
     <form class="stack" data-auth-form="register">
         <label>
             Username
@@ -17,7 +18,7 @@
         </label>
         <label>
             Password
-            <input type="password" name="password" placeholder="Create password" required>
+            <input type="password" name="password" placeholder="password123" required>
         </label>
         <button class="button primary" type="submit">Register</button>
         <p class="form-message" data-form-message></p>

@@ -7,9 +7,12 @@
     <div>
         <p class="eyebrow">Patient Dashboard</p>
         <h1 id="welcomeMessage">Medication Overview</h1>
-        <p class="muted">Create medications, schedule reminders, and monitor adherence.</p>
+        <p class="muted">Create medications, schedule reminders, track adherence, and test notifications.</p>
     </div>
-    <button class="button secondary" id="logoutButton" type="button">Logout</button>
+    <div class="inline-actions">
+        <button class="button secondary" id="triggerNotificationsButton" type="button">Trigger Notifications</button>
+        <button class="button secondary" id="logoutButton" type="button">Logout</button>
+    </div>
 </section>
 
 <section class="grid">
@@ -102,8 +105,15 @@
     </article>
 </section>
 
-<section class="panel">
-    <h2>Medication History</h2>
-    <div id="historyList" class="list"></div>
+<section class="grid">
+    <article class="panel">
+        <h2>Medication History</h2>
+        <div id="historyList" class="list"></div>
+    </article>
+
+    <article class="panel">
+        <h2>Notification Log</h2>
+        <div id="notificationList" class="list"></div>
+    </article>
 </section>
 {% endblock %}

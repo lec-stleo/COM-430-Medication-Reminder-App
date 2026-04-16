@@ -224,6 +224,7 @@ textarea {
     gap: 0.8rem;
     align-items: center;
     margin-top: 0.8rem;
+    flex-wrap: wrap;
 }
 
 .small-button {
@@ -256,11 +257,5 @@ textarea {
     .nav-row {
         grid-template-columns: 1fr;
         display: grid;
-    }
-
-    .nav-links,
-    .button-row,
-    .inline-actions {
-        flex-wrap: wrap;
     }
 }
