@@ -61,28 +61,22 @@ class MedicationReminderAppTests(unittest.TestCase):
             },
         )
 
-    def create_schedule(
-        self,
-        medication_id,
-        scheduled_date="2026-04-10",
-        scheduled_time="09:00",
-        frequency="daily",
-        start_date="2026-04-10",
-        end_date="2026-04-20",
-        reminder_status="enabled",
-    ):
+    def create_schedule(self, medication_id, **overrides):
         """Create a schedule for the active test user."""
+        payload = {
+            "medication_id": medication_id,
+            "scheduled_date": "2026-04-10",
+            "scheduled_time": "09:00",
+            "frequency": "daily",
+            "start_date": "2026-04-10",
+            "end_date": "2026-04-20",
+            "reminder_status": "enabled",
+        }
+        payload.update(overrides)
+
         return self.client.post(
             "/api/schedules",
-            json={
-                "medication_id": medication_id,
-                "scheduled_date": scheduled_date,
-                "scheduled_time": scheduled_time,
-                "frequency": frequency,
-                "start_date": start_date,
-                "end_date": end_date,
-                "reminder_status": reminder_status,
-            },
+            json=payload,
         )
 
     def test_health_route(self):
