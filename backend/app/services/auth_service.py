@@ -8,7 +8,6 @@ from ..db import get_db
 def create_user(username, email, password):
     """Insert a new user record and return the created user identifier."""
     db = get_db()
-    # pbkdf2 is widely supported, which avoids platform-specific issues with scrypt.
     password_hash = generate_password_hash(password, method="pbkdf2:sha256")
     cursor = db.execute(
         """
@@ -24,19 +23,13 @@ def create_user(username, email, password):
 def get_user_by_username(username):
     """Fetch a full user record by username."""
     db = get_db()
-    return db.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (username,),
-    ).fetchone()
+    return db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
 
 def get_user_by_email(email):
     """Fetch a full user record by email address."""
     db = get_db()
-    return db.execute(
-        "SELECT * FROM users WHERE email = ?",
-        (email,),
-    ).fetchone()
+    return db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
 
 
 def get_user_by_id(user_id):

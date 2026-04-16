@@ -51,8 +51,12 @@ def register():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
-    if not username or not email or not password:
-        return jsonify({"error": "Username, email, and password are required."}), 400
+    if len(username) < 3:
+        return jsonify({"error": "Username must be at least 3 characters."}), 400
+    if "@" not in email or "." not in email:
+        return jsonify({"error": "A valid email is required."}), 400
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters."}), 400
 
     if get_user_by_username(username):
         return jsonify({"error": "Username already exists."}), 409
@@ -78,6 +82,9 @@ def login():
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
 
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+
     user = verify_user(username, password)
     if not user:
         return jsonify({"error": "Invalid username or password."}), 401
@@ -87,7 +94,7 @@ def login():
     return jsonify(
         {
             "message": "Login successful.",
-            "user": {"id": user["id"], "username": user["username"]},
+            "user": {"id": user["id"], "username": user["username"], "email": user["email"]},
         }
     )
 
