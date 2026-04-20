@@ -167,8 +167,15 @@ textarea {
 
 .muted,
 .form-message,
-.empty-state {
+.empty-state,
+.dashboard-message {
     color: var(--muted);
+}
+
+.dashboard-message {
+    min-height: 1.4rem;
+    margin: 0 0 1rem;
+    font-weight: 600;
 }
 
 .dashboard-header {
@@ -198,6 +205,10 @@ textarea {
 .card h3,
 .card p {
     margin: 0 0 0.45rem;
+}
+
+.card h3 {
+    margin-bottom: 0.7rem;
 }
 
 .status {
@@ -248,6 +259,22 @@ textarea {
 
 .error {
     color: var(--danger);
+}
+
+.inline-form {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.inline-form[hidden] {
+    display: none;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {

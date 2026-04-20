@@ -15,6 +15,8 @@
     </div>
 </section>
 
+<p class="dashboard-message" id="dashboardMessage" aria-live="polite"></p>
+
 <section class="grid">
     <article class="panel">
         <h2>Add Medication</h2>
@@ -44,6 +46,7 @@
                 <textarea name="notes" rows="3" placeholder="Take with food"></textarea>
             </label>
             <button class="button primary" type="submit">Save Medication</button>
+            <p class="form-message" data-form-message="medication"></p>
         </form>
     </article>
 
@@ -89,6 +92,7 @@
                 </select>
             </label>
             <button class="button primary" type="submit">Create Schedule</button>
+            <p class="form-message" data-form-message="schedule"></p>
         </form>
     </article>
 </section>
@@ -102,6 +106,13 @@
     <article class="panel">
         <h2>Schedules</h2>
         <div id="scheduleList" class="list"></div>
+    </article>
+</section>
+
+<section class="grid">
+    <article class="panel">
+        <h2>Upcoming Schedules</h2>
+        <div id="upcomingScheduleList" class="list"></div>
     </article>
 </section>
 
