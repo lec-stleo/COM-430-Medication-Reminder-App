@@ -251,7 +251,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(delete_missing_response.status_code, 404)
 
     def test_create_schedule_and_mark_taken(self):
-        """A user can create a schedule and mark it as taken."""
+        """Recurring schedules advance after a dose is marked as taken."""
         self.register_and_login()
         medication_id = self.create_medication().get_json()["medication"]["id"]
 
@@ -261,13 +261,18 @@ class MedicationReminderAppTests(unittest.TestCase):
 
         take_response = self.client.patch(f"/api/schedules/{schedule_id}/take", json={})
         self.assertEqual(take_response.status_code, 200)
-        self.assertEqual(take_response.get_json()["schedule"]["status"], "taken")
+        updated_schedule = take_response.get_json()["schedule"]
+        self.assertEqual(updated_schedule["status"], "pending")
+        self.assertEqual(updated_schedule["scheduled_date"], "2026-04-11")
 
         history_response = self.client.get("/api/history")
-        self.assertEqual(len(history_response.get_json()["history"]), 1)
+        history = history_response.get_json()["history"]
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["scheduled_date"], "2026-04-10")
+        self.assertEqual(history[0]["action"], "taken")
 
-    def test_schedule_validation_update_delete_skip_and_upcoming(self):
-        """Schedule routes should validate input and support V2 actions."""
+    def test_schedule_validation_errors(self):
+        """Schedule creation should reject malformed payloads with 400 responses."""
         self.register_and_login()
         medication_id = self.create_medication().get_json()["medication"]["id"]
 
@@ -284,6 +289,53 @@ class MedicationReminderAppTests(unittest.TestCase):
             },
         )
         self.assertEqual(invalid_schedule_response.status_code, 400)
+
+        invalid_medication_id_response = self.client.post(
+            "/api/schedules",
+            json={
+                "medication_id": "abc",
+                "scheduled_date": "2099-01-01",
+                "scheduled_time": "08:30",
+                "frequency": "daily",
+                "start_date": "2099-01-01",
+                "end_date": "",
+                "reminder_status": "enabled",
+            },
+        )
+        self.assertEqual(invalid_medication_id_response.status_code, 400)
+
+        invalid_date_range_response = self.client.post(
+            "/api/schedules",
+            json={
+                "medication_id": medication_id,
+                "scheduled_date": "2099-01-01",
+                "scheduled_time": "08:30",
+                "frequency": "daily",
+                "start_date": "2099-01-02",
+                "end_date": "2099-01-01",
+                "reminder_status": "enabled",
+            },
+        )
+        self.assertEqual(invalid_date_range_response.status_code, 400)
+
+        invalid_time_response = self.client.post(
+            "/api/schedules",
+            json={
+                "medication_id": medication_id,
+                "scheduled_date": "2099-01-01",
+                "scheduled_time": "bad-time",
+                "frequency": "daily",
+                "start_date": "2099-01-01",
+                "end_date": "",
+                "reminder_status": "enabled",
+            },
+        )
+        self.assertEqual(invalid_time_response.status_code, 400)
+
+    def test_schedule_update_delete_skip_and_upcoming(self):
+        """Schedule routes should support recurring updates, skip actions, and upcoming views."""
+        self.register_and_login()
+        medication_id = self.create_medication().get_json()["medication"]["id"]
 
         future_schedule = self.create_schedule(
             medication_id,
@@ -342,13 +394,34 @@ class MedicationReminderAppTests(unittest.TestCase):
             json={},
         )
         self.assertEqual(skip_response.status_code, 200)
-        self.assertEqual(skip_response.get_json()["schedule"]["status"], "skipped")
+        skipped_schedule_data = skip_response.get_json()["schedule"]
+        self.assertEqual(skipped_schedule_data["status"], "pending")
+        self.assertEqual(skipped_schedule_data["scheduled_date"], "2026-04-12")
 
         delete_response = self.client.delete(f"/api/schedules/{schedule_id}")
         self.assertEqual(delete_response.status_code, 200)
 
         delete_missing_response = self.client.delete(f"/api/schedules/{schedule_id}")
         self.assertEqual(delete_missing_response.status_code, 404)
+
+    def test_one_time_schedule_completes_after_action(self):
+        """One-time schedules should finish instead of advancing."""
+        self.register_and_login()
+        medication_id = self.create_medication().get_json()["medication"]["id"]
+
+        schedule_response = self.create_schedule(
+            medication_id,
+            scheduled_date="2026-04-10",
+            scheduled_time="09:00",
+            frequency="one-time",
+            start_date="2026-04-10",
+            end_date="",
+        )
+        schedule_id = schedule_response.get_json()["schedule"]["id"]
+
+        take_response = self.client.patch(f"/api/schedules/{schedule_id}/take", json={})
+        self.assertEqual(take_response.status_code, 200)
+        self.assertEqual(take_response.get_json()["schedule"]["status"], "taken")
 
     def test_trigger_notifications(self):
         """A due schedule should produce simulated notification log entries."""
@@ -371,6 +444,10 @@ class MedicationReminderAppTests(unittest.TestCase):
         notification_response = self.client.post("/api/test/trigger-notifications")
         self.assertEqual(notification_response.status_code, 200)
         self.assertEqual(notification_response.get_json()["triggered_count"], 2)
+
+        repeat_notification_response = self.client.post("/api/test/trigger-notifications")
+        self.assertEqual(repeat_notification_response.status_code, 200)
+        self.assertEqual(repeat_notification_response.get_json()["triggered_count"], 0)
 
         notifications_response = self.client.get("/api/notifications")
         notifications = notifications_response.get_json()["notifications"]

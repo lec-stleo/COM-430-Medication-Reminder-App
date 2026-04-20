@@ -148,6 +148,7 @@ COM-430-Medication-Reminder-App/
   - Can appear in reminder and notification logs
 - **Schedule**
   - Belongs to one medication
+  - Stores the next due occurrence for recurring reminders
   - Can create many reminder logs over time
   - Can create notification log entries in Version 2
 - **Reminder Log**
@@ -206,6 +207,8 @@ The database schema is stored in [backend/app/data/schema.sql](backend/app/data/
 - `medication_id`
 - `user_id`
 - `action`
+- `scheduled_date`
+- `scheduled_time`
 - `action_at`
 - `notes`
 
@@ -217,6 +220,8 @@ The database schema is stored in [backend/app/data/schema.sql](backend/app/data/
 - `schedule_id`
 - `type`
 - `message`
+- `scheduled_date`
+- `scheduled_time`
 - `sent_at`
 
 ## REST API Routes
@@ -293,6 +298,7 @@ Example:
 ```env
 SECRET_KEY=change-me-for-test-or-production
 APP_ENV=development
+DEBUG=false
 DATABASE_NAME=medication_reminder_v2.db
 INSTANCE_DIR=backend/instance
 DATABASE_PATH=backend/instance/medication_reminder_v2.db
@@ -414,6 +420,8 @@ Expected result:
 
 - The schedule appears in the schedule list
 - Status should start as `pending`
+- Daily and weekly schedules represent the next due occurrence for a recurring reminder
+- One-time and as-needed schedules stay on a single occurrence until marked taken or skipped
 
 ### 6. Edit or delete the schedule
 
@@ -434,8 +442,9 @@ In the schedule list:
 
 Expected result:
 
-- The schedule status changes
-- A reminder log entry is created
+- A reminder log entry is created for the exact occurrence date and time
+- Daily and weekly schedules advance to their next due date until the end date is reached
+- One-time and as-needed schedules change from `pending` to `taken` or `skipped`
 
 ### 8. Validate adherence history
 
@@ -504,6 +513,7 @@ Version 2 remains simple, but it is more test-ready than Version 1 because it no
 
 - Authentication uses Flask sessions
 - Passwords are stored as hashed values, not plain text
-- Frequency is still stored as a simple label
+- Daily and weekly schedules advance the stored `scheduled_date` to the next due occurrence
+- One-time and as-needed schedules do not auto-advance
 - SQLite is still appropriate for local development and a lightweight Test environment
 - Version 2 intentionally keeps notification handling local and simple
