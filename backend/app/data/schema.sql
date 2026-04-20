@@ -36,6 +36,9 @@ CREATE TABLE schedules (
     status TEXT NOT NULL DEFAULT 'pending',
     last_taken_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (frequency IN ('daily', 'weekly', 'as-needed', 'one-time')),
+    CHECK (reminder_status IN ('enabled', 'disabled')),
+    CHECK (status IN ('pending', 'taken', 'skipped')),
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE
 );
 
@@ -45,8 +48,11 @@ CREATE TABLE reminder_logs (
     medication_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     action TEXT NOT NULL,
+    scheduled_date TEXT NOT NULL,
+    scheduled_time TEXT NOT NULL,
     action_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
+    CHECK (action IN ('taken', 'skipped')),
     FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE,
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -59,9 +65,12 @@ CREATE TABLE notification_logs (
     schedule_id INTEGER NOT NULL,
     type TEXT NOT NULL,
     message TEXT NOT NULL,
+    scheduled_date TEXT NOT NULL,
+    scheduled_time TEXT NOT NULL,
     sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (type IN ('email', 'push')),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE,
     FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE,
-    UNIQUE (schedule_id, type)
+    UNIQUE (schedule_id, type, scheduled_date, scheduled_time)
 );

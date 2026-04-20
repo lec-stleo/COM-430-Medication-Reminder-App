@@ -50,6 +50,8 @@ class ReminderLog(TypedDict):
     medication_id: int
     user_id: int
     action: str
+    scheduled_date: str
+    scheduled_time: str
     action_at: str
     notes: Optional[str]
 
@@ -63,4 +65,6 @@ class NotificationLog(TypedDict):
     schedule_id: int
     type: str
     message: str
+    scheduled_date: str
+    scheduled_time: str
     sent_at: str

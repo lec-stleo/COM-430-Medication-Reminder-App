@@ -21,6 +21,7 @@ class Config:  # pylint: disable=too-few-public-methods
     LOG_DIR = os.getenv("LOG_DIR", str(BASE_DIR / "logs"))
     TESTING = os.getenv("TESTING", "false").lower() == "true"
     APP_ENV = os.getenv("APP_ENV", "development")
+    DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
     @classmethod
     def database_file(cls):

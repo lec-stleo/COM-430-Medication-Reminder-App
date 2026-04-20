@@ -1,5 +1,7 @@
 """Schedule, adherence, and history API routes."""
 
+from datetime import datetime
+
 from flask import Blueprint, current_app, jsonify, request, session
 
 from ..services.history_service import list_history_for_user
@@ -19,22 +21,55 @@ from .auth_routes import login_required
 schedule_bp = Blueprint("schedules", __name__)
 
 
-def _clean_schedule_payload(data):
+VALID_FREQUENCIES = {"daily", "weekly", "as-needed", "one-time"}
+
+
+def _schedule_error(message):
+    """Return a normalized schedule validation error response tuple."""
+    return None, jsonify({"error": message}), 400
+
+
+def _clean_schedule_payload(data):  # pylint: disable=too-many-return-statements
     medication_id = data.get("medication_id")
     scheduled_date = (data.get("scheduled_date") or "").strip()
     scheduled_time = (data.get("scheduled_time") or "").strip()
-    frequency = (data.get("frequency") or "").strip()
+    frequency = (data.get("frequency") or "").strip().lower()
     start_date = (data.get("start_date") or "").strip() or scheduled_date
     end_date = (data.get("end_date") or "").strip() or None
     reminder_status = (data.get("reminder_status") or "enabled").strip()
 
     if not medication_id or not scheduled_date or not scheduled_time or not frequency:
-        return None, jsonify({"error": "Medication, date, time, and frequency are required."}), 400
+        return _schedule_error("Medication, date, time, and frequency are required.")
+    try:
+        medication_id = int(medication_id)
+    except (TypeError, ValueError):
+        return _schedule_error("Medication ID must be a valid number.")
+
+    try:
+        scheduled_date_value = datetime.strptime(scheduled_date, "%Y-%m-%d").date()
+        start_date_value = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date_value = (
+            datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+        )
+        datetime.strptime(scheduled_time, "%H:%M")
+    except ValueError:
+        return _schedule_error(
+            "Schedule date/time must use YYYY-MM-DD and HH:MM formats."
+        )
+
+    if frequency not in VALID_FREQUENCIES:
+        return _schedule_error(
+            "Frequency must be daily, weekly, as-needed, or one-time."
+        )
     if reminder_status not in {"enabled", "disabled"}:
-        return None, jsonify({"error": "Reminder status must be enabled or disabled."}), 400
+        return _schedule_error("Reminder status must be enabled or disabled.")
+    if scheduled_date_value < start_date_value:
+        return _schedule_error("Scheduled date cannot be earlier than the start date.")
+    if end_date_value and end_date_value < start_date_value:
+        return _schedule_error("End date cannot be earlier than the start date.")
 
     return {
-        "medication_id": int(medication_id),
+        "medication_id": medication_id,
         "scheduled_date": scheduled_date,
         "scheduled_time": scheduled_time,
         "frequency": frequency,

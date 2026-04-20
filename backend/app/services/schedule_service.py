@@ -1,6 +1,6 @@
 """Schedule and adherence data access helpers."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..db import fetch_all_dicts, get_db
 
@@ -35,7 +35,7 @@ def list_schedules_for_user(user_id):
 def list_upcoming_schedules_for_user(user_id):
     """Return pending schedules ordered by upcoming due time."""
     schedules = list_schedules_for_user(user_id)
-    now = datetime.utcnow()
+    now = datetime.now()
     return [
         schedule
         for schedule in schedules
@@ -148,33 +148,64 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
     if not schedule:
         return None
 
-    schedule_status = "taken" if action == "taken" else "skipped"
-    if action == "taken":
+    current_scheduled_date = schedule["scheduled_date"]
+    current_scheduled_time = schedule["scheduled_time"]
+    next_scheduled_date = _next_scheduled_date(schedule)
+
+    if next_scheduled_date:
+        last_taken_at_value = "CURRENT_TIMESTAMP" if action == "taken" else "NULL"
+        db.execute(
+            f"""
+            UPDATE schedules
+            SET scheduled_date = ?,
+                status = 'pending',
+                last_taken_at = {last_taken_at_value}
+            WHERE id = ?
+            """,
+            (next_scheduled_date, schedule_id),
+        )
+    elif action == "taken":
         db.execute(
             """
             UPDATE schedules
-            SET status = ?,
+            SET status = 'taken',
                 last_taken_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
-            (schedule_status, schedule_id),
+            (schedule_id,),
         )
     else:
         db.execute(
             """
             UPDATE schedules
-            SET status = ?,
+            SET status = 'skipped',
                 last_taken_at = NULL
             WHERE id = ?
             """,
-            (schedule_status, schedule_id),
+            (schedule_id,),
         )
     db.execute(
         """
-        INSERT INTO reminder_logs (schedule_id, medication_id, user_id, action, notes)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO reminder_logs (
+            schedule_id,
+            medication_id,
+            user_id,
+            action,
+            scheduled_date,
+            scheduled_time,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (schedule_id, schedule["medication_id"], user_id, action, notes),
+        (
+            schedule_id,
+            schedule["medication_id"],
+            user_id,
+            action,
+            current_scheduled_date,
+            current_scheduled_time,
+            notes,
+        ),
     )
     db.commit()
 
@@ -196,3 +227,24 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
         """,
         (schedule_id,),
     ).fetchone()
+
+
+def _next_scheduled_date(schedule):
+    """Return the next due date for recurring schedules, or None when complete."""
+    frequency = schedule["frequency"]
+    if frequency not in {"daily", "weekly"}:
+        return None
+
+    current_date = datetime.strptime(schedule["scheduled_date"], "%Y-%m-%d").date()
+    end_date = (
+        datetime.strptime(schedule["end_date"], "%Y-%m-%d").date()
+        if schedule["end_date"]
+        else None
+    )
+    delta = timedelta(days=1 if frequency == "daily" else 7)
+    next_date = current_date + delta
+
+    if end_date and next_date > end_date:
+        return None
+
+    return next_date.isoformat()

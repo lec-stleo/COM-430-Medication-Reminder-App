@@ -10,12 +10,12 @@ def list_history_for_user(user_id):
         SELECT
             rl.id,
             rl.action,
+            rl.scheduled_date,
+            rl.scheduled_time,
             rl.action_at,
             rl.notes,
             m.name AS medication_name,
             m.dosage,
-            s.scheduled_date,
-            s.scheduled_time,
             s.frequency
         FROM reminder_logs rl
         INNER JOIN medications m ON m.id = rl.medication_id
@@ -38,6 +38,8 @@ def list_notifications_for_user(user_id):
             nl.schedule_id,
             nl.type,
             nl.message,
+            nl.scheduled_date,
+            nl.scheduled_time,
             nl.sent_at,
             m.name AS medication_name,
             m.dosage

@@ -62,17 +62,33 @@ def check_due_medications(user_id):
                 """
                 SELECT id
                 FROM notification_logs
-                WHERE schedule_id = ? AND type = ?
+                WHERE schedule_id = ?
+                  AND type = ?
+                  AND scheduled_date = ?
+                  AND scheduled_time = ?
                 """,
-                (schedule["id"], notification_type),
+                (
+                    schedule["id"],
+                    notification_type,
+                    schedule["scheduled_date"],
+                    schedule["scheduled_time"],
+                ),
             ).fetchone()
             if existing:
                 continue
 
             cursor = db.execute(
                 """
-                INSERT INTO notification_logs (user_id, medication_id, schedule_id, type, message)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO notification_logs (
+                    user_id,
+                    medication_id,
+                    schedule_id,
+                    type,
+                    message,
+                    scheduled_date,
+                    scheduled_time
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     user_id,
@@ -80,6 +96,8 @@ def check_due_medications(user_id):
                     schedule["id"],
                     notification_type,
                     message,
+                    schedule["scheduled_date"],
+                    schedule["scheduled_time"],
                 ),
             )
             current_app.logger.info(message)
@@ -91,6 +109,8 @@ def check_due_medications(user_id):
                     "schedule_id": schedule["id"],
                     "type": notification_type,
                     "message": message,
+                    "scheduled_date": schedule["scheduled_date"],
+                    "scheduled_time": schedule["scheduled_time"],
                 }
             )
 
