@@ -1,46 +1,18 @@
 """Authentication API routes and session guards."""
 
-from functools import wraps
-
 from flask import Blueprint, current_app, jsonify, request, session
 
 from ..services.auth_service import (
     create_user,
     get_user_by_email,
-    get_user_by_id,
     get_public_user_by_username,
     get_user_by_username,
     verify_user,
 )
+from .auth_helpers import get_session_user, login_required
 
 
 auth_bp = Blueprint("auth", __name__)
-
-
-def get_session_user():
-    """Return the currently logged-in user or clear a stale session."""
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-
-    user = get_user_by_id(user_id)
-    if not user:
-        session.pop("user_id", None)
-        return None
-
-    return user
-
-
-def login_required(view_function):
-    """Ensure an API view is only accessible for an active authenticated session."""
-
-    @wraps(view_function)
-    def wrapped_view(*args, **kwargs):
-        if not get_session_user():
-            return jsonify({"error": "Authentication required."}), 401
-        return view_function(*args, **kwargs)
-
-    return wrapped_view
 
 
 @auth_bp.post("/register")

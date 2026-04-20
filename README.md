@@ -345,6 +345,12 @@ http://127.0.0.1:5000
 python -m unittest discover -s tests -v
 ```
 
+## Database Initialization
+
+- `flask init-db` creates any missing tables and preserves existing data.
+- `flask reset-db` is destructive and rebuilds the SQLite schema from scratch.
+- The schema includes database-level `CHECK` constraints for medication status, schedule frequency, reminder status, schedule status, reminder log action, and notification type.
+
 ## Step-by-Step Test Plan for a Test Environment
 
 Use this flow after deploying or starting the application in a Test environment.
@@ -508,6 +514,7 @@ Version 2 remains simple, but it is more test-ready than Version 1 because it no
 - notification simulation that can be manually triggered
 - notification logging for verification
 - automated tests for the main workflows
+- shared session/auth helpers for both page and API guards
 
 ## Notes
 
@@ -517,3 +524,4 @@ Version 2 remains simple, but it is more test-ready than Version 1 because it no
 - One-time and as-needed schedules do not auto-advance
 - SQLite is still appropriate for local development and a lightweight Test environment
 - Version 2 intentionally keeps notification handling local and simple
+- Dashboard list content is rendered through DOM APIs so user-provided values are assigned safely instead of interpolated into HTML

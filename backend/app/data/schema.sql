@@ -1,10 +1,4 @@
-DROP TABLE IF EXISTS notification_logs;
-DROP TABLE IF EXISTS reminder_logs;
-DROP TABLE IF EXISTS schedules;
-DROP TABLE IF EXISTS medications;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
@@ -12,7 +6,7 @@ CREATE TABLE users (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE medications (
+CREATE TABLE IF NOT EXISTS medications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
@@ -21,10 +15,11 @@ CREATE TABLE medications (
     photo_path TEXT,
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (med_status IN ('active', 'paused', 'completed')),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE TABLE schedules (
+CREATE TABLE IF NOT EXISTS schedules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     medication_id INTEGER NOT NULL,
     scheduled_date TEXT NOT NULL,
@@ -42,7 +37,7 @@ CREATE TABLE schedules (
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE
 );
 
-CREATE TABLE reminder_logs (
+CREATE TABLE IF NOT EXISTS reminder_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     schedule_id INTEGER NOT NULL,
     medication_id INTEGER NOT NULL,
@@ -58,7 +53,7 @@ CREATE TABLE reminder_logs (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
-CREATE TABLE notification_logs (
+CREATE TABLE IF NOT EXISTS notification_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     medication_id INTEGER NOT NULL,

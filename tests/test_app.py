@@ -8,6 +8,7 @@ import unittest
 
 from backend.app import create_app
 from backend.app.config import Config
+from backend.app.db import get_db, init_db
 
 
 class MedicationReminderAppTests(unittest.TestCase):
@@ -36,21 +37,29 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.app = create_app(local_test_config)
         self.client = self.app.test_client()
 
-    def register_and_login(self):
-        """Register the default test user and keep the resulting session."""
-        response = self.client.post(
+    def register_and_login(
+        self,
+        client=None,
+        username="student1",
+        email="student1@example.com",
+        password="password123",
+    ):
+        """Register a test user and keep the resulting session on that client."""
+        active_client = client or self.client
+        response = active_client.post(
             "/api/auth/register",
             json={
-                "username": "student1",
-                "email": "student1@example.com",
-                "password": "password123",
+                "username": username,
+                "email": email,
+                "password": password,
             },
         )
         self.assertEqual(response.status_code, 201)
 
-    def create_medication(self, name="Ibuprofen", dosage="200mg"):
+    def create_medication(self, name="Ibuprofen", dosage="200mg", client=None):
         """Create a medication for the active test user."""
-        return self.client.post(
+        active_client = client or self.client
+        return active_client.post(
             "/api/medications",
             json={
                 "name": name,
@@ -61,8 +70,9 @@ class MedicationReminderAppTests(unittest.TestCase):
             },
         )
 
-    def create_schedule(self, medication_id, **overrides):
+    def create_schedule(self, medication_id, client=None, **overrides):
         """Create a schedule for the active test user."""
+        active_client = client or self.client
         payload = {
             "medication_id": medication_id,
             "scheduled_date": "2026-04-10",
@@ -74,10 +84,23 @@ class MedicationReminderAppTests(unittest.TestCase):
         }
         payload.update(overrides)
 
-        return self.client.post(
+        return active_client.post(
             "/api/schedules",
             json=payload,
         )
+
+    def test_init_db_preserves_existing_data_without_reset(self):
+        """init_db should create missing tables without dropping existing rows."""
+        self.register_and_login()
+        self.create_medication(name="Existing Medication")
+
+        with self.app.app_context():
+            init_db()
+            count = get_db().execute("SELECT COUNT(*) AS count FROM medications").fetchone()[
+                "count"
+            ]
+
+        self.assertEqual(count, 1)
 
     def test_health_route(self):
         """The health endpoint should return an OK status payload."""
@@ -422,6 +445,82 @@ class MedicationReminderAppTests(unittest.TestCase):
         take_response = self.client.patch(f"/api/schedules/{schedule_id}/take", json={})
         self.assertEqual(take_response.status_code, 200)
         self.assertEqual(take_response.get_json()["schedule"]["status"], "taken")
+
+    def test_multi_user_isolation_for_medications_and_schedules(self):
+        """Users should not be able to view or mutate each other's resources."""
+        second_client = self.app.test_client()
+
+        self.register_and_login()
+        medication_id = self.create_medication(name="Private Medication").get_json()["medication"][
+            "id"
+        ]
+        schedule_id = self.create_schedule(
+            medication_id,
+            scheduled_date="2099-01-01",
+            scheduled_time="08:30",
+        ).get_json()["schedule"]["id"]
+
+        self.register_and_login(
+            client=second_client,
+            username="student2",
+            email="student2@example.com",
+        )
+
+        second_medications = second_client.get("/api/medications")
+        self.assertEqual(second_medications.status_code, 200)
+        self.assertEqual(second_medications.get_json()["medications"], [])
+
+        second_schedules = second_client.get("/api/schedules")
+        self.assertEqual(second_schedules.status_code, 200)
+        self.assertEqual(second_schedules.get_json()["schedules"], [])
+
+        missing_medication_update = second_client.put(
+            f"/api/medications/{medication_id}",
+            json={
+                "name": "Hacked",
+                "dosage": "999mg",
+                "med_status": "active",
+                "photo_path": "",
+                "notes": "",
+            },
+        )
+        self.assertEqual(missing_medication_update.status_code, 404)
+
+        missing_schedule_update = second_client.put(
+            f"/api/schedules/{schedule_id}",
+            json={
+                "medication_id": medication_id,
+                "scheduled_date": "2099-01-02",
+                "scheduled_time": "10:15",
+                "frequency": "weekly",
+                "start_date": "2099-01-02",
+                "end_date": "2099-01-09",
+                "reminder_status": "enabled",
+            },
+        )
+        self.assertEqual(missing_schedule_update.status_code, 404)
+
+        self.assertEqual(
+            second_client.patch(f"/api/schedules/{schedule_id}/take", json={}).status_code,
+            404,
+        )
+        self.assertEqual(second_client.delete(f"/api/medications/{medication_id}").status_code, 404)
+        self.assertEqual(second_client.delete(f"/api/schedules/{schedule_id}").status_code, 404)
+
+    def test_protected_routes_require_authentication(self):
+        """Protected JSON routes should reject unauthenticated access consistently."""
+        protected_requests = [
+            self.client.get("/api/medications"),
+            self.client.get("/api/schedules"),
+            self.client.get("/api/history"),
+            self.client.get("/api/notifications"),
+            self.client.post("/api/medications", json={}),
+            self.client.post("/api/schedules", json={}),
+            self.client.post("/api/test/trigger-notifications"),
+        ]
+
+        for response in protected_requests:
+            self.assertEqual(response.status_code, 401)
 
     def test_trigger_notifications(self):
         """A due schedule should produce simulated notification log entries."""

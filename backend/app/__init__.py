@@ -39,10 +39,17 @@ def create_app(config_class=Config):
 
     @app.cli.command("init-db")
     def init_db_command():
-        """Create database tables from the schema file."""
+        """Create any missing database tables without deleting existing data."""
         init_db()
         app.logger.info("Database initialized.")
         print("Database initialized.")
+
+    @app.cli.command("reset-db")
+    def reset_db_command():
+        """Delete existing tables and rebuild the database schema from scratch."""
+        init_db(reset=True)
+        app.logger.warning("Database reset and reinitialized.")
+        print("Database reset and reinitialized.")
 
     return app
 

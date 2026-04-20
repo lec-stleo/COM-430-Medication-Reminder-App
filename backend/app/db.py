@@ -24,9 +24,19 @@ def close_db(_error=None):
         db.close()
 
 
-def init_db():
-    """Create all database tables using the schema file."""
+def init_db(reset=False):
+    """Create database tables, optionally resetting the SQLite file first."""
     db = get_db()
+    if reset:
+        db.executescript(
+            """
+            DROP TABLE IF EXISTS notification_logs;
+            DROP TABLE IF EXISTS reminder_logs;
+            DROP TABLE IF EXISTS schedules;
+            DROP TABLE IF EXISTS medications;
+            DROP TABLE IF EXISTS users;
+            """
+        )
     schema_path = Path(current_app.root_path) / "data" / "schema.sql"
     with open(schema_path, "r", encoding="utf-8") as schema_file:
         db.executescript(schema_file.read())
