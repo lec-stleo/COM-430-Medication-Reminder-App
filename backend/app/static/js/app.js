@@ -27,195 +27,395 @@ function setMessage(element, message, isError = false) {
     element.classList.toggle("error", Boolean(isError));
 }
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+function appendTextRow(container, label, value) {
+    const paragraph = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}:`;
+    paragraph.append(strong, ` ${value}`);
+    container.append(paragraph);
 }
 
-function renderEmptyState(message) {
-    return `<p class="empty-state">${escapeHtml(message)}</p>`;
+function createField(labelText, input) {
+    const label = document.createElement("label");
+    label.append(labelText, input);
+    return label;
 }
 
-function buildMedicationOptions(medications, selectedId) {
-    return medications.map((item) => (
-        `<option value="${item.id}" ${item.id === selectedId ? "selected" : ""}>` +
-        `${escapeHtml(item.name)} (${escapeHtml(item.dosage)})</option>`
-    )).join("");
+function createInputField(type, name, value = "", required = false) {
+    const input = document.createElement("input");
+    input.type = type;
+    input.name = name;
+    input.value = value;
+    input.required = required;
+    return input;
 }
 
-function renderMedications(medications) {
-    if (!medications.length) {
-        return renderEmptyState("No medications yet. Add one to start.");
+function createTextAreaField(name, value = "", rows = 3) {
+    const textarea = document.createElement("textarea");
+    textarea.name = name;
+    textarea.rows = rows;
+    textarea.value = value;
+    return textarea;
+}
+
+function createSelectField(name, options, selectedValue, required = false) {
+    const select = document.createElement("select");
+    select.name = name;
+    select.required = required;
+
+    options.forEach((option) => {
+        const optionElement = document.createElement("option");
+        optionElement.value = option.value;
+        optionElement.textContent = option.label;
+        optionElement.selected = option.value === selectedValue;
+        select.append(optionElement);
+    });
+
+    return select;
+}
+
+function createButton(text, className, datasetKey, datasetValue, type = "button") {
+    const button = document.createElement("button");
+    button.type = type;
+    button.className = className;
+    button.textContent = text;
+    if (datasetKey) {
+        button.dataset[datasetKey] = String(datasetValue);
+    }
+    return button;
+}
+
+function createStatusBadge(status) {
+    const statusBadge = document.createElement("span");
+    statusBadge.className = `status ${status}`;
+    statusBadge.textContent = status;
+    return statusBadge;
+}
+
+function createEmptyState(message) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "empty-state";
+    emptyState.textContent = message;
+    return emptyState;
+}
+
+function replaceListContent(container, nodes, emptyMessage) {
+    container.replaceChildren(...(nodes.length ? nodes : [createEmptyState(emptyMessage)]));
+}
+
+function medicationOptions(medications, selectedId, includePlaceholder = false) {
+    const options = [];
+    if (includePlaceholder) {
+        options.push({ value: "", label: "Select medication" });
     }
 
-    return medications.map((medication) => `
-        <article class="card">
-            <h3>${escapeHtml(medication.name)}</h3>
-            <p><strong>Dosage:</strong> ${escapeHtml(medication.dosage)}</p>
-            <p><strong>Status:</strong> ${escapeHtml(medication.med_status)}</p>
-            <p><strong>Photo Path:</strong> ${escapeHtml(medication.photo_path || "No reference photo.")}</p>
-            <p><strong>Notes:</strong> ${escapeHtml(medication.notes || "No notes added.")}</p>
-            <p><strong>Schedules:</strong> ${medication.schedule_count}</p>
-            <div class="inline-actions">
-                <button class="small-button" type="button" data-toggle-medication-edit="${medication.id}">Edit</button>
-                <button class="small-button secondary-action" type="button" data-delete-medication="${medication.id}">Delete</button>
-            </div>
-            <form class="stack inline-form" data-edit-medication-form="${medication.id}" hidden>
-                <label>
-                    Name
-                    <input type="text" name="name" value="${escapeHtml(medication.name)}" required>
-                </label>
-                <label>
-                    Dosage
-                    <input type="text" name="dosage" value="${escapeHtml(medication.dosage)}" required>
-                </label>
-                <label>
-                    Medication Status
-                    <select name="med_status" required>
-                        <option value="active" ${medication.med_status === "active" ? "selected" : ""}>Active</option>
-                        <option value="paused" ${medication.med_status === "paused" ? "selected" : ""}>Paused</option>
-                        <option value="completed" ${medication.med_status === "completed" ? "selected" : ""}>Completed</option>
-                    </select>
-                </label>
-                <label>
-                    Photo Path
-                    <input type="text" name="photo_path" value="${escapeHtml(medication.photo_path || "")}">
-                </label>
-                <label>
-                    Notes
-                    <textarea name="notes" rows="3">${escapeHtml(medication.notes || "")}</textarea>
-                </label>
-                <div class="form-actions">
-                    <button class="small-button" type="submit">Save Changes</button>
-                    <button class="small-button secondary-action" type="button" data-cancel-medication-edit="${medication.id}">Cancel</button>
-                </div>
-                <p class="form-message" data-inline-message="medication-${medication.id}"></p>
-            </form>
-        </article>
-    `).join("");
+    medications.forEach((item) => {
+        options.push({
+            value: String(item.id),
+            label: `${item.name} (${item.dosage})`,
+            selected: String(item.id) === String(selectedId),
+        });
+    });
+
+    return options;
 }
 
-function renderSchedules(schedules, medications) {
-    if (!schedules.length) {
-        return renderEmptyState("No schedules yet. Create one after adding a medication.");
-    }
-
-    return schedules.map((schedule) => `
-        <article class="card">
-            <h3>${escapeHtml(schedule.medication_name)}</h3>
-            <p><strong>Dosage:</strong> ${escapeHtml(schedule.dosage)}</p>
-            <p><strong>Next Due Date:</strong> ${escapeHtml(schedule.scheduled_date)}</p>
-            <p><strong>Time:</strong> ${escapeHtml(schedule.scheduled_time)}</p>
-            <p><strong>Frequency:</strong> ${escapeHtml(schedule.frequency)}</p>
-            <p><strong>Start Date:</strong> ${escapeHtml(schedule.start_date || "Not set")}</p>
-            <p><strong>End Date:</strong> ${escapeHtml(schedule.end_date || "Not set")}</p>
-            <p><strong>Reminder Status:</strong> ${escapeHtml(schedule.reminder_status)}</p>
-            <span class="status ${escapeHtml(schedule.status)}">${escapeHtml(schedule.status)}</span>
-            <div class="inline-actions">
-                <button class="small-button" type="button" data-take-button="${schedule.id}" ${schedule.status !== "pending" ? "disabled" : ""}>Mark as Taken</button>
-                <button class="small-button" type="button" data-toggle-schedule-edit="${schedule.id}">Edit</button>
-                <button class="small-button secondary-action" type="button" data-skip-button="${schedule.id}" ${schedule.status !== "pending" ? "disabled" : ""}>Mark as Skipped</button>
-                <button class="small-button secondary-action" type="button" data-delete-schedule="${schedule.id}">Delete</button>
-            </div>
-            <form class="stack inline-form" data-edit-schedule-form="${schedule.id}" hidden>
-                <label>
-                    Medication
-                    <select name="medication_id" required>
-                        ${buildMedicationOptions(medications, schedule.medication_id)}
-                    </select>
-                </label>
-                <label>
-                    Date
-                    <input type="date" name="scheduled_date" value="${escapeHtml(schedule.scheduled_date)}" required>
-                </label>
-                <label>
-                    Time
-                    <input type="time" name="scheduled_time" value="${escapeHtml(schedule.scheduled_time)}" required>
-                </label>
-                <label>
-                    Frequency
-                    <select name="frequency" required>
-                        <option value="daily" ${schedule.frequency === "daily" ? "selected" : ""}>Daily</option>
-                        <option value="weekly" ${schedule.frequency === "weekly" ? "selected" : ""}>Weekly</option>
-                        <option value="as-needed" ${schedule.frequency === "as-needed" ? "selected" : ""}>As Needed</option>
-                        <option value="one-time" ${schedule.frequency === "one-time" ? "selected" : ""}>One Time</option>
-                    </select>
-                </label>
-                <label>
-                    Start Date
-                    <input type="date" name="start_date" value="${escapeHtml(schedule.start_date || "")}">
-                </label>
-                <label>
-                    End Date
-                    <input type="date" name="end_date" value="${escapeHtml(schedule.end_date || "")}">
-                </label>
-                <label>
-                    Reminder Status
-                    <select name="reminder_status" required>
-                        <option value="enabled" ${schedule.reminder_status === "enabled" ? "selected" : ""}>Enabled</option>
-                        <option value="disabled" ${schedule.reminder_status === "disabled" ? "selected" : ""}>Disabled</option>
-                    </select>
-                </label>
-                <div class="form-actions">
-                    <button class="small-button" type="submit">Save Changes</button>
-                    <button class="small-button secondary-action" type="button" data-cancel-schedule-edit="${schedule.id}">Cancel</button>
-                </div>
-                <p class="form-message" data-inline-message="schedule-${schedule.id}"></p>
-            </form>
-        </article>
-    `).join("");
+function applyOptions(select, options) {
+    select.replaceChildren();
+    options.forEach((option) => {
+        const optionElement = document.createElement("option");
+        optionElement.value = option.value;
+        optionElement.textContent = option.label;
+        optionElement.selected = Boolean(option.selected);
+        select.append(optionElement);
+    });
 }
 
-function renderUpcomingSchedules(schedules) {
-    if (!schedules.length) {
-        return renderEmptyState("No upcoming pending schedules.");
-    }
+function createMedicationEditForm(medication) {
+    const form = document.createElement("form");
+    form.className = "stack inline-form";
+    form.hidden = true;
+    form.dataset.editMedicationForm = String(medication.id);
 
-    return schedules.map((schedule) => `
-        <article class="card">
-            <h3>${escapeHtml(schedule.medication_name)}</h3>
-            <p><strong>Next Due:</strong> ${escapeHtml(schedule.scheduled_date)} at ${escapeHtml(schedule.scheduled_time)}</p>
-            <p><strong>Frequency:</strong> ${escapeHtml(schedule.frequency)}</p>
-            <p><strong>Status:</strong> ${escapeHtml(schedule.status)}</p>
-        </article>
-    `).join("");
+    form.append(
+        createField(
+            "Name",
+            createInputField("text", "name", medication.name, true),
+        ),
+        createField(
+            "Dosage",
+            createInputField("text", "dosage", medication.dosage, true),
+        ),
+        createField(
+            "Medication Status",
+            createSelectField(
+                "med_status",
+                [
+                    { value: "active", label: "Active" },
+                    { value: "paused", label: "Paused" },
+                    { value: "completed", label: "Completed" },
+                ],
+                medication.med_status,
+                true,
+            ),
+        ),
+        createField(
+            "Photo Path",
+            createInputField("text", "photo_path", medication.photo_path || ""),
+        ),
+        createField(
+            "Notes",
+            createTextAreaField("notes", medication.notes || ""),
+        ),
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "form-actions";
+    actions.append(
+        createButton("Save Changes", "small-button", null, null, "submit"),
+        createButton(
+            "Cancel",
+            "small-button secondary-action",
+            "cancelMedicationEdit",
+            medication.id,
+        ),
+    );
+
+    const inlineMessage = document.createElement("p");
+    inlineMessage.className = "form-message";
+    inlineMessage.dataset.inlineMessage = `medication-${medication.id}`;
+
+    form.append(actions, inlineMessage);
+    return form;
 }
 
-function renderHistory(history) {
-    if (!history.length) {
-        return renderEmptyState("No medication history yet. Mark a schedule as taken or skipped to create a log.");
-    }
+function createScheduleEditForm(schedule, medications) {
+    const form = document.createElement("form");
+    form.className = "stack inline-form";
+    form.hidden = true;
+    form.dataset.editScheduleForm = String(schedule.id);
 
-    return history.map((item) => `
-        <article class="card">
-            <h3>${escapeHtml(item.medication_name)}</h3>
-            <p><strong>Action:</strong> ${escapeHtml(item.action)}</p>
-            <p><strong>Occurrence:</strong> ${escapeHtml(item.scheduled_date)} at ${escapeHtml(item.scheduled_time)}</p>
-            <p><strong>Logged At:</strong> ${escapeHtml(item.action_at)}</p>
-            <p><strong>Frequency:</strong> ${escapeHtml(item.frequency)}</p>
-            <p><strong>Notes:</strong> ${escapeHtml(item.notes || "No notes recorded.")}</p>
-        </article>
-    `).join("");
+    form.append(
+        createField(
+            "Medication",
+            createSelectField(
+                "medication_id",
+                medicationOptions(medications, schedule.medication_id),
+                String(schedule.medication_id),
+                true,
+            ),
+        ),
+        createField(
+            "Date",
+            createInputField("date", "scheduled_date", schedule.scheduled_date, true),
+        ),
+        createField(
+            "Time",
+            createInputField("time", "scheduled_time", schedule.scheduled_time, true),
+        ),
+        createField(
+            "Frequency",
+            createSelectField(
+                "frequency",
+                [
+                    { value: "daily", label: "Daily" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "as-needed", label: "As Needed" },
+                    { value: "one-time", label: "One Time" },
+                ],
+                schedule.frequency,
+                true,
+            ),
+        ),
+        createField(
+            "Start Date",
+            createInputField("date", "start_date", schedule.start_date || ""),
+        ),
+        createField(
+            "End Date",
+            createInputField("date", "end_date", schedule.end_date || ""),
+        ),
+        createField(
+            "Reminder Status",
+            createSelectField(
+                "reminder_status",
+                [
+                    { value: "enabled", label: "Enabled" },
+                    { value: "disabled", label: "Disabled" },
+                ],
+                schedule.reminder_status,
+                true,
+            ),
+        ),
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "form-actions";
+    actions.append(
+        createButton("Save Changes", "small-button", null, null, "submit"),
+        createButton(
+            "Cancel",
+            "small-button secondary-action",
+            "cancelScheduleEdit",
+            schedule.id,
+        ),
+    );
+
+    const inlineMessage = document.createElement("p");
+    inlineMessage.className = "form-message";
+    inlineMessage.dataset.inlineMessage = `schedule-${schedule.id}`;
+
+    form.append(actions, inlineMessage);
+    return form;
 }
 
-function renderNotifications(notifications) {
-    if (!notifications.length) {
-        return renderEmptyState("No notifications have been triggered yet.");
-    }
+function renderMedicationCards(medications) {
+    return medications.map((medication) => {
+        const card = document.createElement("article");
+        card.className = "card";
 
-    return notifications.map((item) => `
-        <article class="card">
-            <h3>${escapeHtml(item.medication_name)}</h3>
-            <p><strong>Type:</strong> ${escapeHtml(item.type)}</p>
-            <p><strong>Occurrence:</strong> ${escapeHtml(item.scheduled_date)} at ${escapeHtml(item.scheduled_time)}</p>
-            <p><strong>Message:</strong> ${escapeHtml(item.message)}</p>
-            <p><strong>Sent At:</strong> ${escapeHtml(item.sent_at || "Just now")}</p>
-        </article>
-    `).join("");
+        const title = document.createElement("h3");
+        title.textContent = medication.name;
+        card.append(title);
+
+        appendTextRow(card, "Dosage", medication.dosage);
+        appendTextRow(card, "Status", medication.med_status);
+        appendTextRow(card, "Photo Path", medication.photo_path || "No reference photo.");
+        appendTextRow(card, "Notes", medication.notes || "No notes added.");
+        appendTextRow(card, "Schedules", String(medication.schedule_count));
+
+        const actions = document.createElement("div");
+        actions.className = "inline-actions";
+        actions.append(
+            createButton("Edit", "small-button", "toggleMedicationEdit", medication.id),
+            createButton(
+                "Delete",
+                "small-button secondary-action",
+                "deleteMedication",
+                medication.id,
+            ),
+        );
+
+        card.append(actions, createMedicationEditForm(medication));
+        return card;
+    });
+}
+
+function renderScheduleCards(schedules, medications) {
+    return schedules.map((schedule) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = document.createElement("h3");
+        title.textContent = schedule.medication_name;
+        card.append(title);
+
+        appendTextRow(card, "Dosage", schedule.dosage);
+        appendTextRow(card, "Next Due Date", schedule.scheduled_date);
+        appendTextRow(card, "Time", schedule.scheduled_time);
+        appendTextRow(card, "Frequency", schedule.frequency);
+        appendTextRow(card, "Start Date", schedule.start_date || "Not set");
+        appendTextRow(card, "End Date", schedule.end_date || "Not set");
+        appendTextRow(card, "Reminder Status", schedule.reminder_status);
+        card.append(createStatusBadge(schedule.status));
+
+        const actions = document.createElement("div");
+        actions.className = "inline-actions";
+
+        const takeButton = createButton(
+            "Mark as Taken",
+            "small-button",
+            "takeButton",
+            schedule.id,
+        );
+        takeButton.disabled = schedule.status !== "pending";
+
+        const skipButton = createButton(
+            "Mark as Skipped",
+            "small-button secondary-action",
+            "skipButton",
+            schedule.id,
+        );
+        skipButton.disabled = schedule.status !== "pending";
+
+        actions.append(
+            takeButton,
+            createButton("Edit", "small-button", "toggleScheduleEdit", schedule.id),
+            skipButton,
+            createButton(
+                "Delete",
+                "small-button secondary-action",
+                "deleteSchedule",
+                schedule.id,
+            ),
+        );
+
+        card.append(actions, createScheduleEditForm(schedule, medications));
+        return card;
+    });
+}
+
+function renderUpcomingScheduleCards(schedules) {
+    return schedules.map((schedule) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = document.createElement("h3");
+        title.textContent = schedule.medication_name;
+        card.append(title);
+
+        appendTextRow(
+            card,
+            "Next Due",
+            `${schedule.scheduled_date} at ${schedule.scheduled_time}`,
+        );
+        appendTextRow(card, "Frequency", schedule.frequency);
+        appendTextRow(card, "Status", schedule.status);
+        return card;
+    });
+}
+
+function renderHistoryCards(history) {
+    return history.map((item) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = document.createElement("h3");
+        title.textContent = item.medication_name;
+        card.append(title);
+
+        appendTextRow(card, "Action", item.action);
+        appendTextRow(
+            card,
+            "Occurrence",
+            `${item.scheduled_date} at ${item.scheduled_time}`,
+        );
+        appendTextRow(card, "Logged At", item.action_at);
+        appendTextRow(card, "Frequency", item.frequency);
+        appendTextRow(card, "Notes", item.notes || "No notes recorded.");
+        return card;
+    });
+}
+
+function renderNotificationCards(notifications) {
+    return notifications.map((item) => {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const title = document.createElement("h3");
+        title.textContent = item.medication_name;
+        card.append(title);
+
+        appendTextRow(card, "Type", item.type);
+        appendTextRow(
+            card,
+            "Occurrence",
+            `${item.scheduled_date} at ${item.scheduled_time}`,
+        );
+        appendTextRow(card, "Message", item.message);
+        appendTextRow(card, "Sent At", item.sent_at || "Just now");
+        return card;
+    });
 }
 
 async function handleAuthForm(form, mode) {
@@ -265,16 +465,37 @@ async function loadDashboard() {
 
         welcomeMessage.textContent = `${me.user.username}'s Medication Overview`;
         setMessage(dashboardMessage, message);
-        medicationList.innerHTML = renderMedications(medications.medications);
-        scheduleList.innerHTML = renderSchedules(schedules.schedules, medications.medications);
-        upcomingScheduleList.innerHTML = renderUpcomingSchedules(upcoming.schedules);
-        historyList.innerHTML = renderHistory(history.history);
-        notificationList.innerHTML = renderNotifications(notifications.notifications);
 
-        medicationSelect.innerHTML = `
-            <option value="">Select medication</option>
-            ${buildMedicationOptions(medications.medications)}
-        `;
+        replaceListContent(
+            medicationList,
+            renderMedicationCards(medications.medications),
+            "No medications yet. Add one to start.",
+        );
+        replaceListContent(
+            scheduleList,
+            renderScheduleCards(schedules.schedules, medications.medications),
+            "No schedules yet. Create one after adding a medication.",
+        );
+        replaceListContent(
+            upcomingScheduleList,
+            renderUpcomingScheduleCards(upcoming.schedules),
+            "No upcoming pending schedules.",
+        );
+        replaceListContent(
+            historyList,
+            renderHistoryCards(history.history),
+            "No medication history yet. Mark a schedule as taken or skipped to create a log.",
+        );
+        replaceListContent(
+            notificationList,
+            renderNotificationCards(notifications.notifications),
+            "No notifications have been triggered yet.",
+        );
+
+        applyOptions(
+            medicationSelect,
+            medicationOptions(medications.medications, "", true),
+        );
 
         bindDashboardActions();
     }
@@ -282,14 +503,18 @@ async function loadDashboard() {
     function bindDashboardActions() {
         document.querySelectorAll("[data-toggle-medication-edit]").forEach((button) => {
             button.addEventListener("click", () => {
-                const form = document.querySelector(`[data-edit-medication-form="${button.dataset.toggleMedicationEdit}"]`);
+                const form = document.querySelector(
+                    `[data-edit-medication-form="${button.dataset.toggleMedicationEdit}"]`,
+                );
                 form.hidden = false;
             });
         });
 
         document.querySelectorAll("[data-cancel-medication-edit]").forEach((button) => {
             button.addEventListener("click", () => {
-                const form = document.querySelector(`[data-edit-medication-form="${button.dataset.cancelMedicationEdit}"]`);
+                const form = document.querySelector(
+                    `[data-edit-medication-form="${button.dataset.cancelMedicationEdit}"]`,
+                );
                 form.hidden = true;
                 setMessage(form.querySelector("[data-inline-message]"), "");
             });
@@ -328,14 +553,18 @@ async function loadDashboard() {
 
         document.querySelectorAll("[data-toggle-schedule-edit]").forEach((button) => {
             button.addEventListener("click", () => {
-                const form = document.querySelector(`[data-edit-schedule-form="${button.dataset.toggleScheduleEdit}"]`);
+                const form = document.querySelector(
+                    `[data-edit-schedule-form="${button.dataset.toggleScheduleEdit}"]`,
+                );
                 form.hidden = false;
             });
         });
 
         document.querySelectorAll("[data-cancel-schedule-edit]").forEach((button) => {
             button.addEventListener("click", () => {
-                const form = document.querySelector(`[data-edit-schedule-form="${button.dataset.cancelScheduleEdit}"]`);
+                const form = document.querySelector(
+                    `[data-edit-schedule-form="${button.dataset.cancelScheduleEdit}"]`,
+                );
                 form.hidden = true;
                 setMessage(form.querySelector("[data-inline-message]"), "");
             });
@@ -436,7 +665,9 @@ async function loadDashboard() {
     triggerNotificationsButton.addEventListener("click", async () => {
         try {
             const result = await apiRequest("/api/test/trigger-notifications", { method: "POST" });
-            await refreshDashboard(`Notification check completed. Triggered ${result.triggered_count} notification(s).`);
+            await refreshDashboard(
+                `Notification check completed. Triggered ${result.triggered_count} notification(s).`,
+            );
         } catch (error) {
             setMessage(dashboardMessage, error.message, true);
         }
