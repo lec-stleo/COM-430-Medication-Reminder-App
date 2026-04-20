@@ -153,17 +153,28 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
     next_scheduled_date = _next_scheduled_date(schedule)
 
     if next_scheduled_date:
-        last_taken_at_value = "CURRENT_TIMESTAMP" if action == "taken" else "NULL"
-        db.execute(
-            f"""
-            UPDATE schedules
-            SET scheduled_date = ?,
-                status = 'pending',
-                last_taken_at = {last_taken_at_value}
-            WHERE id = ?
-            """,
-            (next_scheduled_date, schedule_id),
-        )
+        if action == "taken":
+            db.execute(
+                """
+                UPDATE schedules
+                SET scheduled_date = ?,
+                    status = 'pending',
+                    last_taken_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (next_scheduled_date, schedule_id),
+            )
+        else:
+            db.execute(
+                """
+                UPDATE schedules
+                SET scheduled_date = ?,
+                    status = 'pending',
+                    last_taken_at = NULL
+                WHERE id = ?
+                """,
+                (next_scheduled_date, schedule_id),
+            )
     elif action == "taken":
         db.execute(
             """
