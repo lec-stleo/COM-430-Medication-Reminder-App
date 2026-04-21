@@ -1,3 +1,4 @@
+-- Core account records. User ownership is enforced through foreign keys in child tables.
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
@@ -6,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Medications belong to one user and can be referenced by many schedules/log entries.
 CREATE TABLE IF NOT EXISTS medications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -19,6 +21,7 @@ CREATE TABLE IF NOT EXISTS medications (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+-- Each row stores the next due occurrence for a medication reminder.
 CREATE TABLE IF NOT EXISTS schedules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     medication_id INTEGER NOT NULL,
@@ -37,6 +40,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     FOREIGN KEY (medication_id) REFERENCES medications (id) ON DELETE CASCADE
 );
 
+-- Reminder logs preserve the exact occurrence that was acted on.
 CREATE TABLE IF NOT EXISTS reminder_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     schedule_id INTEGER NOT NULL,
@@ -53,6 +57,7 @@ CREATE TABLE IF NOT EXISTS reminder_logs (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+-- Notification logs preserve the exact occurrence that triggered the message.
 CREATE TABLE IF NOT EXISTS notification_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -69,3 +74,19 @@ CREATE TABLE IF NOT EXISTS notification_logs (
     FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE,
     UNIQUE (schedule_id, type, scheduled_date, scheduled_time)
 );
+
+-- These indexes target the most common ownership and due-date lookups in the app.
+CREATE INDEX IF NOT EXISTS idx_medications_user_id
+ON medications (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_medication_id
+ON schedules (medication_id);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_due_at
+ON schedules (scheduled_date, scheduled_time);
+
+CREATE INDEX IF NOT EXISTS idx_reminder_logs_user_id
+ON reminder_logs (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notification_logs_user_id
+ON notification_logs (user_id);
