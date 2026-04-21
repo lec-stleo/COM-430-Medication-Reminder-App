@@ -8,6 +8,7 @@ from ..db import get_db
 def create_user(username, email, password):
     """Insert a new user record and return the created user identifier."""
     db = get_db()
+    # Flask/Werkzeug handles the password hashing so raw passwords never reach the DB.
     password_hash = generate_password_hash(password, method="pbkdf2:sha256")
     cursor = db.execute(
         """

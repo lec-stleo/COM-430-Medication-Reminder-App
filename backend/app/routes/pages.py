@@ -10,6 +10,8 @@ pages_bp = Blueprint("pages", __name__)
 @pages_bp.get("/")
 def home():
     """Render the landing page or redirect authenticated users to the dashboard."""
+    # The page routes are intentionally thin; most dynamic behavior happens
+    # through the JSON API once the dashboard loads.
     if has_active_session():
         return redirect(url_for("pages.dashboard"))
     return render_template("index.html")

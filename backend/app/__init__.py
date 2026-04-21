@@ -16,6 +16,8 @@ from .routes.system_routes import system_bp
 
 def create_app(config_class=Config):
     """Application factory used by the dev server and tests."""
+    # The app factory keeps runtime configuration flexible for tests, local runs,
+    # and any future deployment environments.
     app = Flask(
         __name__,
         template_folder="templates",
@@ -47,6 +49,7 @@ def create_app(config_class=Config):
     @app.cli.command("reset-db")
     def reset_db_command():
         """Delete existing tables and rebuild the database schema from scratch."""
+        # This is intentionally separate from init-db so destructive behavior is explicit.
         init_db(reset=True)
         app.logger.warning("Database reset and reinitialized.")
         print("Database reset and reinitialized.")
@@ -56,6 +59,8 @@ def create_app(config_class=Config):
 
 def configure_logging(app):
     """Write logs to both the console and a file for easier debugging."""
+    # The project keeps logging simple: one file for review/debugging and one
+    # stream handler for immediate terminal visibility.
     log_path = os.path.join(app.config["LOG_DIR"], "app.log")
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 

@@ -16,6 +16,7 @@ medication_bp = Blueprint("medications", __name__)
 
 
 def _clean_medication_payload(data):
+    # Normalizing once here keeps the create and update endpoints aligned.
     name = (data.get("name") or "").strip()
     dosage = (data.get("dosage") or "").strip()
     med_status = (data.get("med_status") or "active").strip()
@@ -90,6 +91,7 @@ def add_medication():
 @login_required
 def edit_medication(medication_id):
     """Update an existing medication owned by the active user."""
+    # Ownership is checked before update so users cannot modify another user's data.
     medication = get_medication_for_user(session["user_id"], medication_id)
     if not medication:
         return jsonify({"error": "Medication not found."}), 404

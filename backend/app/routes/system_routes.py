@@ -26,6 +26,7 @@ def health():
 @login_required
 def trigger_notifications():
     """Run the local notification simulation for due medications."""
+    # This endpoint keeps notification behavior easy to demo without background workers.
     triggered_notifications = check_due_medications(session["user_id"])
     return jsonify(
         {

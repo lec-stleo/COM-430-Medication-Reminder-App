@@ -31,6 +31,7 @@ def login_required(view_function):
 
     @wraps(view_function)
     def wrapped_view(*args, **kwargs):
+        # Returning JSON here keeps API failures consistent across protected routes.
         if not get_session_user():
             return jsonify({"error": "Authentication required."}), 401
         return view_function(*args, **kwargs)

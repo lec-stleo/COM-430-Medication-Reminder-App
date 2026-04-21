@@ -1,4 +1,4 @@
-"""Entity field definitions used to document the app's data model."""
+"""Typed record definitions used to document DB row shapes."""
 
 from typing import Optional, TypedDict
 
@@ -6,6 +6,7 @@ from typing import Optional, TypedDict
 class User(TypedDict):
     """Dictionary shape for user records."""
 
+    # These TypedDicts act as lightweight documentation for SQLite row shapes.
     id: int
     username: str
     email: str

@@ -28,6 +28,8 @@ def init_db(reset=False):
     """Create database tables, optionally resetting the SQLite file first."""
     db = get_db()
     if reset:
+        # Keep destructive behavior behind an explicit flag so normal startup
+        # and `init-db` preserve existing demo/test data.
         db.executescript(
             """
             DROP TABLE IF EXISTS notification_logs;
@@ -48,6 +50,8 @@ def init_app(app):
 
     @app.before_request
     def ensure_database_exists():
+        # The app lazily creates the SQLite file on first request so a fresh
+        # clone can start without a separate manual bootstrap step.
         if not Path(app.config["DATABASE_PATH"]).exists():
             with app.app_context():
                 init_db()

@@ -5,6 +5,8 @@ from ..db import fetch_all_dicts
 
 def list_history_for_user(user_id):
     """Return reminder log entries for a given user ordered by newest first."""
+    # History is built from log rows rather than current schedules so recurring
+    # schedules do not overwrite the record of earlier occurrences.
     return fetch_all_dicts(
         """
         SELECT

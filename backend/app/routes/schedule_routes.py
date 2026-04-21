@@ -46,6 +46,8 @@ def _clean_schedule_payload(data):  # pylint: disable=too-many-return-statements
         return _schedule_error("Medication ID must be a valid number.")
 
     try:
+        # Parsing here keeps invalid date/time strings from failing later inside
+        # recurring logic or notification checks.
         scheduled_date_value = datetime.strptime(scheduled_date, "%Y-%m-%d").date()
         start_date_value = datetime.strptime(start_date, "%Y-%m-%d").date()
         end_date_value = (
@@ -115,6 +117,7 @@ def add_schedule():
         session["user_id"],
     )
 
+    # Re-read from the list endpoint query so the response shape matches what the dashboard expects.
     schedules = list_schedules_for_user(session["user_id"])
     schedule = next((item for item in schedules if item["id"] == schedule_id), None)
     return jsonify({"message": "Schedule added successfully.", "schedule": schedule}), 201
@@ -161,6 +164,7 @@ def remove_schedule(schedule_id):
 @login_required
 def take_schedule(schedule_id):
     """Mark a scheduled dose as taken and store an adherence log."""
+    # Notes are optional and intentionally lightweight for a small class project.
     data = request.get_json(silent=True) or {}
     notes = (data.get("notes") or "").strip() or None
 

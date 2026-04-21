@@ -1,4 +1,6 @@
 async function apiRequest(url, options = {}) {
+    // Centralize fetch behavior so every dashboard action gets the same
+    // headers, session handling, and JSON error parsing.
     const response = await fetch(url, {
         headers: {
             "Content-Type": "application/json",
@@ -36,6 +38,8 @@ function appendTextRow(container, label, value) {
 }
 
 function createField(labelText, input) {
+    // Forms are built through DOM APIs rather than HTML strings so user values
+    // are assigned safely through element properties.
     const label = document.createElement("label");
     label.append(labelText, input);
     return label;
@@ -132,6 +136,8 @@ function applyOptions(select, options) {
 }
 
 function createMedicationEditForm(medication) {
+    // Inline edit forms keep the dashboard self-contained and easier to review
+    // than the earlier prompt()-based editing flow.
     const form = document.createElement("form");
     form.className = "stack inline-form";
     form.hidden = true;
@@ -328,6 +334,7 @@ function renderScheduleCards(schedules, medications) {
             "takeButton",
             schedule.id,
         );
+        // Only pending occurrences can be acted on from the dashboard.
         takeButton.disabled = schedule.status !== "pending";
 
         const skipButton = createButton(
@@ -454,6 +461,8 @@ async function loadDashboard() {
     const scheduleFormMessage = document.querySelector("[data-form-message='schedule']");
 
     async function refreshDashboard(message = "") {
+        // The dashboard reloads its state from the API after every write so the
+        // page reflects the same server-side truth the tests verify.
         const [me, medications, schedules, upcoming, history, notifications] = await Promise.all([
             apiRequest("/api/auth/me"),
             apiRequest("/api/medications"),
@@ -501,6 +510,7 @@ async function loadDashboard() {
     }
 
     function bindDashboardActions() {
+        // Event listeners are rebound after each refresh because the card DOM is recreated.
         document.querySelectorAll("[data-toggle-medication-edit]").forEach((button) => {
             button.addEventListener("click", () => {
                 const form = document.querySelector(

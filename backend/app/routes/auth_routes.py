@@ -18,6 +18,8 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.post("/register")
 def register():
     """Create a new user account and start a session."""
+    # Support JSON requests and simple form submissions so the same route works
+    # for both the browser UI and test client helpers.
     data = request.get_json(silent=True) or request.form
     username = (data.get("username") or "").strip()
     email = (data.get("email") or "").strip().lower()
@@ -66,7 +68,11 @@ def login():
     return jsonify(
         {
             "message": "Login successful.",
-            "user": {"id": user["id"], "username": user["username"], "email": user["email"]},
+            "user": {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+            },
         }
     )
 
@@ -92,6 +98,8 @@ def me():
 @login_required
 def get_user(username):
     """Return the authenticated user's public profile by username."""
+    # The app intentionally limits profile access to the current user to keep
+    # the data model and demo security story simple.
     current_user = get_session_user()
     if not current_user or current_user["username"] != username:
         return jsonify({"error": "You can only view your own profile."}), 403

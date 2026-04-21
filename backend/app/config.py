@@ -14,6 +14,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 class Config:  # pylint: disable=too-few-public-methods
     """Default runtime configuration for local development and tests."""
 
+    # These defaults keep the app runnable from a fresh clone while still letting
+    # environment variables override paths and runtime behavior when needed.
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     DATABASE_NAME = os.getenv("DATABASE_NAME", "medication_reminder_v2.db")
     INSTANCE_DIR = os.getenv("INSTANCE_DIR", str(BASE_DIR / "instance"))
