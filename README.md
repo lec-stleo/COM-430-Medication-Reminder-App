@@ -1,62 +1,134 @@
 # Medication Reminder System
 
-This project began as a **Version 1 prototype** for a DevOps-focused Medication Reminder System and has now been improved into a **Version 2 test-stage build**.
+This repository contains the final submission of a Flask-based Medication Reminder System. The project was built in three stages to show clear improvement over time:
+
+- `Version 1`: baseline medication reminder prototype
+- `Version 2`: stronger CRUD, validation, notification simulation, and testing
+- `Final`: recurring schedule behavior, safer rendering, stronger database constraints, shared auth/session helpers, and improved submission documentation
 
 The application uses:
 
 - Python
 - Flask
 - SQLite
-- HTML, CSS, and minimal JavaScript
-
-This stack stays beginner-friendly and easy to run locally while still being structured enough to demonstrate a realistic **Development -> Test** progression.
+- HTML, CSS, and JavaScript
 
 Project history is tracked in [CHANGELOG.md](CHANGELOG.md).
 
-## Project Overview
+## Final Submission Summary
 
-The Medication Reminder System helps users:
+The final project supports:
 
-- register and log in
-- add medications
-- create medication schedules
-- mark medications as taken or skipped
-- view medication adherence history
-- simulate reminder notifications in Version 2
+- user registration and login
+- medication CRUD
+- schedule CRUD
+- recurring reminder behavior for daily and weekly schedules
+- one-time and as-needed schedules
+- marking medications as taken or skipped
+- adherence history with occurrence-specific logging
+- simulated email and push notifications
+- upcoming schedule visibility
+- health-check and logging support
+- automated test coverage for core workflows and authorization boundaries
 
 ## Version Progression
 
 ### Version 1
 
-Version 1 established the core workflow:
+Version 1 established the core application structure and baseline workflow:
 
+- Flask application factory and startup path
+- SQLite schema and data access helpers
 - user registration and login
-- medication entry
+- medication creation
 - schedule creation
 - marking medications as taken
-- viewing reminder history
+- reminder history
+- server-rendered pages and basic dashboard JavaScript
 
 ### Version 2
 
-Version 2 keeps the same structure and improves it for test-stage readiness.
+Version 2 improved the prototype into a stronger test-ready application:
 
-Main additions:
-
-- edit and delete for medications
-- edit and delete for schedules
-- upcoming schedule view
+- medication edit and delete
+- schedule edit and delete
 - skip action for schedules
-- stronger validation and cleaner error handling
-- better environment configuration
+- upcoming schedule endpoint
+- stronger route validation
+- environment-based configuration
 - file and console logging
-- simulated email and push notifications
-- `notification_logs` storage
-- manual notification trigger route
-- broader automated test coverage
+- notification simulation
+- notification log storage
+- broader automated tests
 
-## Project Folder Structure
+### Final
 
-The structure remains close to Version 1, with only a small service addition for notifications.
+The final submission closes the main gaps from the audit:
+
+- recurring schedules now advance correctly for `daily` and `weekly` reminders
+- `one-time` and `as-needed` schedules complete in place
+- history and notification logs store the exact occurrence date/time
+- dashboard editing uses inline forms instead of `prompt()`
+- dashboard content is rendered safely through DOM APIs instead of raw HTML interpolation
+- authentication/session helper logic is centralized
+- database initialization is non-destructive by default
+- schema `CHECK` constraints were expanded
+- automated tests now include malformed input, protected-route access, and multi-user isolation
+- workflow automation was updated to current GitHub Actions versions compatible with Node 24
+
+## Business Requirements
+
+The application is intended to satisfy these business needs:
+
+1. A patient must be able to create an account and securely log in.
+2. A patient must be able to create, view, update, and delete medication records.
+3. A patient must be able to create, view, update, and delete reminder schedules.
+4. A patient must be able to mark a scheduled medication as taken or skipped.
+5. The system must preserve adherence history for each occurrence.
+6. The system must support recurring schedules for common cases such as daily and weekly reminders.
+7. The system must allow a user to view upcoming pending reminders.
+8. The system must simulate reminder notifications for local/demo use without external services.
+9. The system must keep data isolated per authenticated user.
+10. The project must be simple to run locally and support automated verification.
+
+## Functional Requirements by Version
+
+### Version 1 Functions
+
+- Register, log in, and log out
+- Add medications
+- Create schedules
+- Mark schedules as taken
+- View reminder history
+
+### Version 2 Functions
+
+- Edit/delete medications
+- Edit/delete schedules
+- Skip schedules
+- Trigger notification simulation
+- View notification logs
+- View upcoming schedules through API
+
+### Final Functions
+
+- Recurring schedule advancement
+- Inline dashboard edit forms
+- Safer client-side rendering
+- Shared session/auth guards
+- Non-destructive DB initialization
+- Expanded validation and authorization tests
+
+## Architecture Overview
+
+### Layers
+
+- `Frontend layer`: Jinja templates, CSS, and dashboard JavaScript
+- `Route layer`: Flask Blueprints for pages and REST-style endpoints
+- `Service layer`: business logic and SQLite queries
+- `Database layer`: SQLite schema and connection lifecycle helpers
+
+### Folder Structure
 
 ```text
 COM-430-Medication-Reminder-App/
@@ -72,6 +144,7 @@ COM-430-Medication-Reminder-App/
 │       │   └── schema.sql
 │       ├── routes/
 │       │   ├── __init__.py
+│       │   ├── auth_helpers.py
 │       │   ├── auth_routes.py
 │       │   ├── medication_routes.py
 │       │   ├── pages.py
@@ -102,127 +175,140 @@ COM-430-Medication-Reminder-App/
 └── README.md
 ```
 
-## Features
+## Module Mapping
 
-### Core Features from Version 1
+### Application Core
 
-- User registration
-- User login/logout
-- Add medications
-- Create schedules
-- Mark medications as taken
-- View medication adherence history
-- Health route for environment checks
+- [backend/app/__init__.py](backend/app/__init__.py): app factory, logging, blueprint registration, CLI DB commands
+- [backend/app/config.py](backend/app/config.py): environment-backed config values
+- [backend/app/db.py](backend/app/db.py): SQLite connection handling and schema initialization
+- [backend/app/models.py](backend/app/models.py): typed dictionary shapes for data records
 
-### Added in Version 2
+### Route Modules
 
-- Edit and delete medications
-- Edit and delete schedules
-- View upcoming schedules
-- Mark medications as skipped
-- Simulated email notifications
-- Simulated push notifications
-- Notification logs
-- Manual notification trigger route
-- Expanded automated tests
-- More explicit validation and logging
+- [backend/app/routes/pages.py](backend/app/routes/pages.py): landing, login, register, dashboard pages
+- [backend/app/routes/auth_helpers.py](backend/app/routes/auth_helpers.py): shared session/auth guard helpers
+- [backend/app/routes/auth_routes.py](backend/app/routes/auth_routes.py): auth API routes
+- [backend/app/routes/medication_routes.py](backend/app/routes/medication_routes.py): medication CRUD endpoints
+- [backend/app/routes/schedule_routes.py](backend/app/routes/schedule_routes.py): schedule CRUD, take/skip, history
+- [backend/app/routes/system_routes.py](backend/app/routes/system_routes.py): health and notification endpoints
 
-## Architecture Overview
+### Service Modules
 
-### Layers
+- [backend/app/services/auth_service.py](backend/app/services/auth_service.py): user lookup, password hashing, credential verification
+- [backend/app/services/medication_service.py](backend/app/services/medication_service.py): medication queries and persistence
+- [backend/app/services/schedule_service.py](backend/app/services/schedule_service.py): schedule queries, recurring advancement, adherence actions
+- [backend/app/services/history_service.py](backend/app/services/history_service.py): history and notification log queries
+- [backend/app/services/notification_service.py](backend/app/services/notification_service.py): due-medication detection and notification simulation
 
-- **Frontend layer:** HTML templates, CSS, and minimal JavaScript
-- **Route layer:** Flask Blueprints that expose pages and REST APIs
-- **Service layer:** business logic and database queries
-- **Database layer:** SQLite with a SQL schema file
+### Frontend Modules
 
-### Entities and Relationships
+- [backend/app/templates/base.html](backend/app/templates/base.html): shared layout
+- [backend/app/templates/index.html](backend/app/templates/index.html): landing page
+- [backend/app/templates/login.html](backend/app/templates/login.html): login page
+- [backend/app/templates/register.html](backend/app/templates/register.html): register page
+- [backend/app/templates/dashboard.html](backend/app/templates/dashboard.html): dashboard structure
+- [backend/app/static/js/app.js](backend/app/static/js/app.js): client-side dashboard behavior
+- [backend/app/static/css/styles.css](backend/app/static/css/styles.css): styling
 
-- **User**
-  - One user can have many medications
-  - One user can have many reminder logs
-  - One user can have many notification logs
-- **Medication**
-  - Belongs to one user
-  - Can have many schedules
-  - Can appear in reminder and notification logs
-- **Schedule**
-  - Belongs to one medication
-  - Stores the next due occurrence for recurring reminders
-  - Can create many reminder logs over time
-  - Can create notification log entries in Version 2
-- **Reminder Log**
-  - Belongs to one user
-  - Belongs to one medication
-  - Belongs to one schedule
-- **Notification Log**
-  - Belongs to one user
-  - Belongs to one medication
-  - Belongs to one schedule
-  - Stores simulated email/push notification activity
+### Test Module
 
-## Database Schema
+- [tests/test_app.py](tests/test_app.py): end-to-end route and workflow verification
 
-The database schema is stored in [backend/app/data/schema.sql](backend/app/data/schema.sql).
+## Data Model and Data Dictionary
 
-### Tables
+The database schema is defined in [backend/app/data/schema.sql](backend/app/data/schema.sql).
 
-#### `users`
+### `users`
 
-- `id`
-- `username`
-- `email`
-- `password_hash`
-- `created_at`
+- `id`: primary key
+- `username`: unique account name, required
+- `email`: unique email address, required
+- `password_hash`: hashed password, required
+- `created_at`: timestamp of account creation
 
-#### `medications`
+### `medications`
 
-- `id`
-- `user_id`
-- `name`
-- `dosage`
-- `med_status`
-- `photo_path`
-- `notes`
-- `created_at`
+- `id`: primary key
+- `user_id`: owner user ID
+- `name`: medication name, required
+- `dosage`: dosage string, required
+- `med_status`: medication state, checked as `active`, `paused`, or `completed`
+- `photo_path`: optional image/reference path
+- `notes`: optional notes
+- `created_at`: creation timestamp
 
-#### `schedules`
+### `schedules`
 
-- `id`
-- `medication_id`
-- `scheduled_date`
-- `scheduled_time`
-- `frequency`
-- `start_date`
-- `end_date`
-- `reminder_status`
-- `status`
-- `last_taken_at`
-- `created_at`
+- `id`: primary key
+- `medication_id`: related medication ID
+- `scheduled_date`: next due occurrence date
+- `scheduled_time`: due time
+- `frequency`: checked as `daily`, `weekly`, `as-needed`, or `one-time`
+- `start_date`: optional schedule start
+- `end_date`: optional schedule end
+- `reminder_status`: checked as `enabled` or `disabled`
+- `status`: checked as `pending`, `taken`, or `skipped`
+- `last_taken_at`: timestamp of most recent taken action
+- `created_at`: creation timestamp
 
-#### `reminder_logs`
+### `reminder_logs`
 
-- `id`
-- `schedule_id`
-- `medication_id`
-- `user_id`
-- `action`
-- `scheduled_date`
-- `scheduled_time`
-- `action_at`
-- `notes`
+- `id`: primary key
+- `schedule_id`: related schedule
+- `medication_id`: related medication
+- `user_id`: related user
+- `action`: checked as `taken` or `skipped`
+- `scheduled_date`: exact occurrence date that was acted on
+- `scheduled_time`: exact occurrence time that was acted on
+- `action_at`: timestamp of the logged action
+- `notes`: optional notes
 
-#### `notification_logs`
+### `notification_logs`
 
-- `id`
-- `user_id`
-- `medication_id`
-- `schedule_id`
-- `type`
-- `message`
-- `scheduled_date`
-- `scheduled_time`
-- `sent_at`
+- `id`: primary key
+- `user_id`: related user
+- `medication_id`: related medication
+- `schedule_id`: related schedule
+- `type`: checked as `email` or `push`
+- `message`: notification message content
+- `scheduled_date`: exact occurrence date the notification was tied to
+- `scheduled_time`: exact occurrence time the notification was tied to
+- `sent_at`: notification timestamp
+
+## Application Behavior by Module
+
+### Authentication
+
+- Users register through `POST /api/auth/register`
+- Passwords are hashed before storage
+- Session-based authentication is used for protected routes
+- Shared helper logic clears stale sessions automatically
+
+### Medication Management
+
+- Medications are scoped to the authenticated user
+- The dashboard supports create, update, delete, and list flows
+- Medication status can be active, paused, or completed
+
+### Scheduling
+
+- Daily and weekly schedules recur by advancing `scheduled_date`
+- One-time and as-needed schedules remain single-occurrence
+- Schedule validation checks IDs, dates, times, frequency, and date ranges
+- Upcoming schedules are limited to pending future occurrences
+
+### Adherence History
+
+- Every take/skip action writes a reminder log entry
+- History records preserve the exact occurrence date/time acted on
+- History is ordered newest first
+
+### Notifications
+
+- Notifications are simulated locally through a manual trigger endpoint
+- Email and push notifications are written to the database and app logs
+- Notification uniqueness is enforced per schedule, type, and occurrence
 
 ## REST API Routes
 
@@ -257,43 +343,24 @@ The database schema is stored in [backend/app/data/schema.sql](backend/app/data/
 - `GET /api/notifications`
 - `POST /api/test/trigger-notifications`
 
-### System / DevOps
+### System
 
 - `GET /api/health`
 
-## Notification System Process
+## Notification Workflow
 
-Version 2 introduces a small notification foundation without adding background workers or external services.
+The project does not use background workers or third-party notification services. Instead, it uses a manual simulation flow for local development, testing, and demonstration.
 
-### What Was Added
-
-- A `notification_service.py` module
-- A `check_due_medications()` function
-- A `notification_logs` table
-- A manual trigger endpoint for testing
-
-### How It Works
-
-1. A user creates a medication schedule.
-2. When a schedule becomes due, Version 2 can simulate notifications.
-3. The route `POST /api/test/trigger-notifications` runs the check manually.
-4. The app simulates:
-   - email notification
-   - push notification
-5. Each simulated notification is written to:
-   - the console/log file
-   - the `notification_logs` table
-
-### Example Output
-
-- `EMAIL SENT: Take Aspirin 100mg at 8:00 AM`
-- `PUSH NOTIFICATION: Time to take your medication`
+1. A user creates a medication and schedule.
+2. The schedule becomes due based on its stored occurrence date/time.
+3. `POST /api/test/trigger-notifications` checks the authenticated user’s due schedules.
+4. The app simulates one email and one push notification.
+5. Notification entries are stored in `notification_logs`.
+6. Notification messages are also written to the application log.
 
 ## Environment Configuration
 
 Copy `.env.example` to `.env` and adjust values if needed.
-
-Example:
 
 ```env
 SECRET_KEY=change-me-for-test-or-production
@@ -306,7 +373,7 @@ LOG_DIR=backend/logs
 TESTING=false
 ```
 
-## How to Run Locally
+## Local Setup
 
 ### 1. Create and activate a virtual environment
 
@@ -339,189 +406,65 @@ python backend/run.py
 http://127.0.0.1:5000
 ```
 
-## How to Run Tests
-
-```bash
-python -m unittest discover -s tests -v
-```
-
 ## Database Initialization
 
-- `flask init-db` creates any missing tables and preserves existing data.
-- `flask reset-db` is destructive and rebuilds the SQLite schema from scratch.
-- The schema includes database-level `CHECK` constraints for medication status, schedule frequency, reminder status, schedule status, reminder log action, and notification type.
+- `flask init-db` creates missing tables and preserves existing data.
+- `flask reset-db` is destructive and rebuilds the database from scratch.
 
-## Step-by-Step Test Plan for a Test Environment
+## Testing and Evidence
 
-Use this flow after deploying or starting the application in a Test environment.
-
-### 1. Confirm the service is running
-
-Open:
-
-- `GET /api/health`
-
-Expected result:
-
-```json
-{
-  "environment": "development",
-  "service": "medication-reminder-system",
-  "status": "ok"
-}
-```
-
-### 2. Create a test user
-
-Go to:
-
-- `/register`
-
-Create a user such as:
-
-- Username: `tester1`
-- Password: `password123`
-
-Expected result:
-
-- You should be redirected to the dashboard
-- A user session should be created
-
-### 3. Add a medication
-
-In the dashboard:
-
-- Enter medication name
-- Enter dosage
-- Optionally enter notes
-- Click **Save Medication**
-
-Expected result:
-
-- The medication appears in the medication list
-- The medication becomes available in the schedule dropdown
-
-### 4. Edit the medication
-
-In the medication list:
-
-- Click **Edit**
-- Update the name, dosage, or status
-
-Expected result:
-
-- The medication record updates in place
-
-### 5. Create a schedule
-
-In the dashboard:
-
-- Select a medication
-- Choose a date
-- Choose a time
-- Select a frequency
-- Click **Create Schedule**
-
-Expected result:
-
-- The schedule appears in the schedule list
-- Status should start as `pending`
-- Daily and weekly schedules represent the next due occurrence for a recurring reminder
-- One-time and as-needed schedules stay on a single occurrence until marked taken or skipped
-
-### 6. Edit or delete the schedule
-
-In the schedule list:
-
-- Click **Edit** to update schedule details
-- Click **Delete** to remove the schedule if needed
-
-Expected result:
-
-- The schedule list updates correctly
-
-### 7. Mark medication as taken or skipped
-
-In the schedule list:
-
-- Click **Mark as Taken** or **Mark as Skipped**
-
-Expected result:
-
-- A reminder log entry is created for the exact occurrence date and time
-- Daily and weekly schedules advance to their next due date until the end date is reached
-- One-time and as-needed schedules change from `pending` to `taken` or `skipped`
-
-### 8. Validate adherence history
-
-In the dashboard history section:
-
-- Check that the medication appears in the history list
-
-Expected result:
-
-- The action should show `taken` or `skipped`
-- The scheduled date/time should be visible
-- The event timestamp should be recorded
-
-### 9. Trigger notifications
-
-Use a schedule that is already due, then call:
-
-- `POST /api/test/trigger-notifications`
-
-Expected result:
-
-- The response contains the triggered notifications
-- Email and push simulation messages are generated
-- Entries are stored in `notification_logs`
-
-### 10. Validate logs
-
-Check the log file after running the app:
-
-- `backend/logs/app.log`
-
-Expected result:
-
-- Registration, login, medication changes, schedule changes, and notification simulation should be logged
-
-### 11. Run automated tests in Test
-
-Execute:
+### Automated Test Command
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Expected result:
+### Current Automated Coverage Areas
 
-- Health route test passes
-- Registration/login test passes
-- Medication update test passes
-- Schedule/adherence test passes
-- Notification trigger test passes
+- health endpoint
+- guest vs authenticated page routing
+- registration, login, logout, and profile access
+- medication create, update, delete, and validation
+- schedule create, update, delete, take, skip, and validation
+- recurring schedule advancement
+- one-time schedule completion behavior
+- upcoming schedules
+- notification triggering and duplicate suppression
+- protected-route authentication
+- multi-user isolation
+- non-destructive DB initialization
 
-## How Version 2 Supports DevOps Promotion to Test Stage
+### Suggested Manual Evidence for Final Report
 
-Version 2 remains simple, but it is more test-ready than Version 1 because it now includes:
+Add screenshots or screen recordings for:
 
-- environment-based configuration
-- file and console logging
-- stronger validation and clearer errors
-- CRUD completeness for core features
-- upcoming schedule visibility
-- notification simulation that can be manually triggered
-- notification logging for verification
-- automated tests for the main workflows
-- shared session/auth helpers for both page and API guards
+- landing page
+- registration flow
+- dashboard with medication list
+- schedule creation
+- recurring schedule advancement after marking taken
+- upcoming schedule list
+- history log after take/skip actions
+- notification log after manual trigger
+- passing CI checks or terminal test output
 
-## Notes
+## Known Limitations
 
-- Authentication uses Flask sessions
-- Passwords are stored as hashed values, not plain text
-- Daily and weekly schedules advance the stored `scheduled_date` to the next due occurrence
-- One-time and as-needed schedules do not auto-advance
-- SQLite is still appropriate for local development and a lightweight Test environment
-- Version 2 intentionally keeps notification handling local and simple
-- Dashboard list content is rendered through DOM APIs so user-provided values are assigned safely instead of interpolated into HTML
+- SQLite is used for local simplicity, not high-concurrency production use.
+- Notification delivery is simulated rather than integrated with real email/push providers.
+- Recurrence is intentionally limited to `daily` and `weekly` advancement; more complex rules are not implemented.
+- The app uses session auth for a single web interface rather than full role-based access control.
+- No background scheduler is used; reminders are triggered manually for demonstration/testing.
+
+## Delivery Completeness
+
+The final submission includes:
+
+- source code for backend and frontend
+- environment example file
+- database schema
+- automated tests
+- GitHub Actions workflows
+- changelog
+- final report-style README with architecture, requirements, module mapping, data dictionary, and test guidance
+

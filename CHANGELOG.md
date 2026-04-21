@@ -1,63 +1,32 @@
 # Changelog
 
-Notable changes to this project are documented in this file.
+This project was developed in three stages.
 
-## [Final Projet]
+## Final Submission
 
-- Placeholder section.
+The final submission completes the project with:
 
-## [Version 2 Test Stage]
+- recurring schedule behavior for daily and weekly reminders
+- safer dashboard rendering and inline edit forms
+- centralized auth/session helpers
+- safer database initialization and stronger schema constraints
+- expanded tests and updated submission documentation
 
-Version 2 keeps the Version 1 Flask and SQLite structure, then improves it for a Development -> Test promotion.
+## Version 2
 
-### Added
+Version 2 expanded the prototype with:
 
-- Environment-based configuration updates for Version 2 test-stage setup
-- Expanded database foundation and schema updates for Version 2
-- Medication edit and delete support
-- Schedule edit and delete support
-- Upcoming schedule route
-- Simulated notification workflow
-- Notification trigger route
-- Notification log route
-- Notification service module
-- Dashboard notification display and trigger action
-- Expanded automated tests for Version 2 routes and workflows
+- medication and schedule edit/delete support
+- skip actions and upcoming schedule support
+- notification simulation and notification logs
+- improved validation, logging, and automated tests
 
-### Changed
+## Version 1
 
-- README updated to document the Version 1 to Version 2 progression
-- Authentication validation improved for registration and login
-- Page route flow updated for Version 2 navigation behavior
-- Dashboard UI updated to support medication and schedule edit/delete actions
-- Test helpers refactored for pylint compliance
+Version 1 established the base application with:
 
-### Fixed
-
-- Pylint issues across Version 2 modules and tests
-- Test coverage gap for Version 2 routes and workflows
-- Deprecation warning caused by `datetime.utcnow()` in notification-related test coverage
-
-### Notes
-
-- Version 2 keeps notifications local and simulated.
-- The architecture remains close to Version 1 to stay easy to test.
-
-## [Version 1 Prototype]
-
-### Added
-
-- Flask application configuration and startup flow
-- SQLite schema, database helpers, and core models
-- Authentication service and authentication API routes
-- Page routes and server-rendered HTML templates
-- Frontend styling and dashboard JavaScript behavior
-- Medication management endpoints
-- Schedule creation and listing endpoints
-- Adherence action endpoints for marking schedules as taken or skipped
-- Reminder history service and history route
-- Backend automated test coverage
-
-### Notes
-
-- The application is focused on core medication reminder workflows.
+- Flask app setup and SQLite database support
+- user registration and login
+- medication and schedule creation
+- adherence history tracking
+- initial dashboard pages and backend tests
