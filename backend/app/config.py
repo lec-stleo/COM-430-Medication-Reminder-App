@@ -17,7 +17,7 @@ class Config:  # pylint: disable=too-few-public-methods
     # These defaults keep the app runnable from a fresh clone while still letting
     # environment variables override paths and runtime behavior when needed.
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-    DATABASE_NAME = os.getenv("DATABASE_NAME", "medication_reminder_v2.db")
+    DATABASE_NAME = os.getenv("DATABASE_NAME", "medication_reminder.db")
     INSTANCE_DIR = os.getenv("INSTANCE_DIR", str(BASE_DIR / "instance"))
     DATABASE_PATH = os.getenv("DATABASE_PATH", str(Path(INSTANCE_DIR) / DATABASE_NAME))
     LOG_DIR = os.getenv("LOG_DIR", str(BASE_DIR / "logs"))
