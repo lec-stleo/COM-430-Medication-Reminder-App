@@ -1,7 +1,7 @@
 """Automated tests for the medication reminder Flask application."""
 
 from contextlib import ExitStack
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
 import tempfile
 import unittest

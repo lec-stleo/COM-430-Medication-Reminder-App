@@ -6,7 +6,8 @@ from ..db import fetch_all_dicts, get_db
 
 def list_medications_for_user(user_id):
     """Return every medication that belongs to the given user."""
-    # The schedule count is included here so the dashboard does not need a second query per medication.
+    # The schedule count is included here so the dashboard does not need
+    # a second query per medication.
     return fetch_all_dicts(
         """
         SELECT
