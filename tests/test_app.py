@@ -1,7 +1,7 @@
 """Automated tests for the medication reminder Flask application."""
 
 from contextlib import ExitStack
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import os
 import tempfile
 import unittest
@@ -9,6 +9,7 @@ import unittest
 from backend.app import create_app
 from backend.app.config import Config
 from backend.app.db import get_db, init_db
+from backend.app.time_utils import current_schedule_time
 
 
 class MedicationReminderAppTests(unittest.TestCase):
@@ -16,6 +17,7 @@ class MedicationReminderAppTests(unittest.TestCase):
 
     def setUp(self):
         """Create an isolated app instance backed by a temporary SQLite file."""
+        # Every test gets its own SQLite file so route and workflow tests stay isolated.
         self.resource_stack = ExitStack()
         self.addCleanup(self.resource_stack.close)
         self.temp_dir = self.resource_stack.enter_context(tempfile.TemporaryDirectory())
@@ -73,6 +75,8 @@ class MedicationReminderAppTests(unittest.TestCase):
     def create_schedule(self, medication_id, client=None, **overrides):
         """Create a schedule for the active test user."""
         active_client = client or self.client
+        # These defaults represent the common recurring schedule case, with
+        # per-test overrides for edge cases like one-time reminders.
         payload = {
             "medication_id": medication_id,
             "scheduled_date": "2026-04-10",
@@ -101,6 +105,21 @@ class MedicationReminderAppTests(unittest.TestCase):
             ]
 
         self.assertEqual(count, 1)
+
+    def test_reset_db_cli_clears_existing_data(self):
+        """reset-db should rebuild the schema and remove existing data."""
+        self.register_and_login()
+        self.create_medication(name="Temporary Medication")
+
+        runner = self.app.test_cli_runner()
+        result = runner.invoke(args=["reset-db"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Database reset and reinitialized.", result.output)
+
+        with self.app.app_context():
+            row = get_db().execute("SELECT COUNT(*) AS count FROM users").fetchone()
+            self.assertEqual(row["count"], 0)
 
     def test_health_route(self):
         """The health endpoint should return an OK status payload."""
@@ -427,6 +446,29 @@ class MedicationReminderAppTests(unittest.TestCase):
         delete_missing_response = self.client.delete(f"/api/schedules/{schedule_id}")
         self.assertEqual(delete_missing_response.status_code, 404)
 
+    def test_upcoming_and_notifications_use_system_clock(self):
+        """Upcoming filtering and due notifications should honor the system clock."""
+        self.register_and_login()
+        medication_id = self.create_medication().get_json()["medication"]["id"]
+        future_time = current_schedule_time() + timedelta(minutes=30)
+
+        schedule_response = self.create_schedule(
+            medication_id,
+            scheduled_date=future_time.strftime("%Y-%m-%d"),
+            scheduled_time=future_time.strftime("%H:%M"),
+            start_date=future_time.strftime("%Y-%m-%d"),
+            end_date="",
+        )
+        self.assertEqual(schedule_response.status_code, 201)
+
+        upcoming_response = self.client.get("/api/schedules/upcoming")
+        self.assertEqual(upcoming_response.status_code, 200)
+        self.assertEqual(len(upcoming_response.get_json()["schedules"]), 1)
+
+        notification_response = self.client.post("/api/test/trigger-notifications")
+        self.assertEqual(notification_response.status_code, 200)
+        self.assertEqual(notification_response.get_json()["triggered_count"], 0)
+
     def test_one_time_schedule_completes_after_action(self):
         """One-time schedules should finish instead of advancing."""
         self.register_and_login()
@@ -529,7 +571,7 @@ class MedicationReminderAppTests(unittest.TestCase):
             name="Aspirin",
             dosage="100mg",
         ).get_json()["medication"]["id"]
-        due_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1)
+        due_time = current_schedule_time() - timedelta(minutes=1)
 
         schedule_response = self.create_schedule(
             medication_id,

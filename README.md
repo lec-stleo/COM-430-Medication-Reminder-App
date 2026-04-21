@@ -13,6 +13,8 @@ The application uses:
 - SQLite
 - HTML, CSS, and JavaScript
 
+Schedule date/time comparisons use the local timezone reported by the machine running the app.
+
 Project history is tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## Final Submission Summary
@@ -196,6 +198,7 @@ COM-430-Medication-Reminder-App/
 ### Service Modules
 
 - [backend/app/services/auth_service.py](backend/app/services/auth_service.py): user lookup, password hashing, credential verification
+- [backend/app/time_utils.py](backend/app/time_utils.py): system-clock time helpers for schedule comparisons
 - [backend/app/services/medication_service.py](backend/app/services/medication_service.py): medication queries and persistence
 - [backend/app/services/schedule_service.py](backend/app/services/schedule_service.py): schedule queries, recurring advancement, adherence actions
 - [backend/app/services/history_service.py](backend/app/services/history_service.py): history and notification log queries
@@ -296,6 +299,7 @@ The database schema is defined in [backend/app/data/schema.sql](backend/app/data
 - Daily and weekly schedules recur by advancing `scheduled_date`
 - One-time and as-needed schedules remain single-occurrence
 - Schedule validation checks IDs, dates, times, frequency, and date ranges
+- Upcoming schedules and due-notification checks use the server's local system clock
 - Upcoming schedules are limited to pending future occurrences
 
 ### Adherence History
@@ -353,7 +357,7 @@ The project does not use background workers or third-party notification services
 
 1. A user creates a medication and schedule.
 2. The schedule becomes due based on its stored occurrence date/time.
-3. `POST /api/test/trigger-notifications` checks the authenticated user’s due schedules.
+3. `POST /api/test/trigger-notifications` checks the authenticated user’s due schedules against the server's local clock.
 4. The app simulates one email and one push notification.
 5. Notification entries are stored in `notification_logs`.
 6. Notification messages are also written to the application log.
@@ -410,6 +414,7 @@ http://127.0.0.1:5000
 
 - `flask init-db` creates missing tables and preserves existing data.
 - `flask reset-db` is destructive and rebuilds the database from scratch.
+- The schema includes indexes for common user, medication, and schedule lookup patterns.
 
 ## Testing and Evidence
 
@@ -428,6 +433,7 @@ python -m unittest discover -s tests -v
 - schedule create, update, delete, take, skip, and validation
 - recurring schedule advancement
 - one-time schedule completion behavior
+- system-clock-based schedule comparisons
 - upcoming schedules
 - notification triggering and duplicate suppression
 - protected-route authentication
@@ -455,6 +461,7 @@ Add screenshots or screen recordings for:
 - Recurrence is intentionally limited to `daily` and `weekly` advancement; more complex rules are not implemented.
 - The app uses session auth for a single web interface rather than full role-based access control.
 - No background scheduler is used; reminders are triggered manually for demonstration/testing.
+- Schedule timing depends on the local timezone configured on the machine running the app.
 
 ## Delivery Completeness
 
@@ -467,4 +474,3 @@ The final submission includes:
 - GitHub Actions workflows
 - changelog
 - final report-style README with architecture, requirements, module mapping, data dictionary, and test guidance
-

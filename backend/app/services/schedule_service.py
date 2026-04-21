@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 from ..db import fetch_all_dicts, get_db
+from ..time_utils import current_schedule_time, parse_schedule_datetime
 
 
 def list_schedules_for_user(user_id):
@@ -35,14 +36,12 @@ def list_schedules_for_user(user_id):
 def list_upcoming_schedules_for_user(user_id):
     """Return pending schedules ordered by upcoming due time."""
     schedules = list_schedules_for_user(user_id)
-    now = datetime.now()
+    now = current_schedule_time()
     return [
         schedule
         for schedule in schedules
         if schedule["status"] == "pending"
-        and datetime.fromisoformat(
-            f'{schedule["scheduled_date"]}T{schedule["scheduled_time"]}:00'
-        ) >= now
+        and parse_schedule_datetime(schedule["scheduled_date"], schedule["scheduled_time"]) >= now
     ]
 
 
@@ -153,6 +152,8 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
     next_scheduled_date = _next_scheduled_date(schedule)
 
     if next_scheduled_date:
+        # Recurring schedules do not finish after one action. Instead, the row
+        # advances to the next due occurrence and stays pending.
         if action == "taken":
             db.execute(
                 """
@@ -176,6 +177,7 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
                 (next_scheduled_date, schedule_id),
             )
     elif action == "taken":
+        # One-time / as-needed schedules complete in place once taken.
         db.execute(
             """
             UPDATE schedules
@@ -186,6 +188,8 @@ def update_schedule_action(user_id, schedule_id, action, notes=None):
             (schedule_id,),
         )
     else:
+        # Skipped single-occurrence schedules also remain on the same row, but
+        # their final state is preserved for the dashboard/history.
         db.execute(
             """
             UPDATE schedules
@@ -255,6 +259,8 @@ def _next_scheduled_date(schedule):
     delta = timedelta(days=1 if frequency == "daily" else 7)
     next_date = current_date + delta
 
+    # Once the next recurring occurrence would move past the configured end
+    # date, the schedule stops recurring and later actions mark it complete.
     if end_date and next_date > end_date:
         return None
 

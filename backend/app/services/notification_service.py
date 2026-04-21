@@ -1,22 +1,24 @@
 """Simple notification simulation service for Version 2."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from flask import current_app
 
 from ..db import fetch_all_dicts, get_db
+from ..time_utils import current_schedule_time, parse_schedule_datetime
 
 
 def _is_due(schedule_row, now):
-    scheduled_at = datetime.fromisoformat(
-        f'{schedule_row["scheduled_date"]}T{schedule_row["scheduled_time"]}:00'
+    scheduled_at = parse_schedule_datetime(
+        schedule_row["scheduled_date"],
+        schedule_row["scheduled_time"],
     )
     return schedule_row["status"] == "pending" and scheduled_at <= now
 
 
 def check_due_medications(user_id):
     """Simulate sending email and push notifications for due medications."""
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = current_schedule_time()
     due_schedules = fetch_all_dicts(
         """
         SELECT
@@ -58,6 +60,8 @@ def check_due_medications(user_id):
             ("email", email_message),
             ("push", push_message),
         ):
+            # Notifications are unique per occurrence. A recurring schedule can
+            # notify again on its next date, but not twice for the same date/time.
             existing = db.execute(
                 """
                 SELECT id
