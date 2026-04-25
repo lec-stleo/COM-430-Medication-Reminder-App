@@ -24,6 +24,65 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Check dashboard JavaScript syntax
+        run: |
+          node --check backend/app/static/js/app.js
+
+      - name: Verify database init and reset commands
+        run: |
+          export FLASK_APP=backend.app:create_app
+          rm -f backend/instance/medication_reminder.db
+
+          flask init-db
+
+          python - <<'PY'
+          import sqlite3
+
+          db = sqlite3.connect("backend/instance/medication_reminder.db")
+          tables = {
+              row[0]
+              for row in db.execute(
+                  "SELECT name FROM sqlite_master WHERE type = 'table'"
+              ).fetchall()
+          }
+          indexes = {
+              row[0]
+              for row in db.execute(
+                  "SELECT name FROM sqlite_master WHERE type = 'index'"
+              ).fetchall()
+          }
+
+          expected_tables = {
+              "users",
+              "medications",
+              "schedules",
+              "reminder_logs",
+              "notification_logs",
+          }
+          expected_indexes = {
+              "idx_medications_user_id",
+              "idx_schedules_medication_id",
+              "idx_schedules_due_at",
+              "idx_reminder_logs_user_id",
+              "idx_notification_logs_user_id",
+          }
+
+          missing_tables = expected_tables - tables
+          missing_indexes = expected_indexes - indexes
+          assert not missing_tables, f"Missing tables: {sorted(missing_tables)}"
+          assert not missing_indexes, f"Missing indexes: {sorted(missing_indexes)}"
+          PY
+
+          flask reset-db
+
+          python - <<'PY'
+          import sqlite3
+
+          db = sqlite3.connect("backend/instance/medication_reminder.db")
+          user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+          assert user_count == 0, f"Expected empty users table after reset, got {user_count}"
+          PY
+
       - name: Start app and verify health endpoint
         run: |
           PYTHONPATH=. python -m backend.run > flask.log 2>&1 &
