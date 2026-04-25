@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Medication Reminder System V2{% endblock %}
+{% block title %}Medication Reminder System | Final Submission{% endblock %}
 {% block page_id %}landing{% endblock %}
 
 {% block content %}
 <section class="hero">
     <div class="hero-copy">
-        <p class="eyebrow">DevOps Course Prototype</p>
-        <h1>Version 2 is ready for development-to-test promotion.</h1>
+        <p class="eyebrow">COM-430 Final Submission</p>
+        <h1>Medication tracking, scheduling, and adherence in one final integrated system.</h1>
         <p class="muted">
             Manage medications, create schedules, track adherence, and simulate reminders
-            with a cleaner Flask architecture and automated tests.
+            with recurring schedule logic, stronger validation, and automated verification.
         </p>
         <div class="button-row">
             <a class="button primary" href="{{ url_for('pages.register_page') }}">Create an Account</a>
@@ -18,13 +18,13 @@
         </div>
     </div>
     <article class="hero-card">
-        <h2>Version 2 Focus</h2>
+        <h2>Final Build Highlights</h2>
         <ul class="feature-list">
             <li>Session-based authentication</li>
             <li>Medication and schedule CRUD</li>
-            <li>Adherence history and reminder logs</li>
-            <li>Email and push notification simulation</li>
-            <li>Health-check, logging, seed data, and tests</li>
+            <li>Occurrence-level adherence and notification logs</li>
+            <li>Recurring daily and weekly reminder handling</li>
+            <li>Health-check, logging, UI tests, and CI workflows</li>
         </ul>
     </article>
 </section>
