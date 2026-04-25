@@ -48,6 +48,7 @@ class MedicationReminderAppTests(unittest.TestCase):
     ):
         """Register a test user and keep the resulting session on that client."""
         active_client = client or self.client
+        headers = self.csrf_headers(client=active_client, seed_path="/register")
         response = active_client.post(
             "/api/auth/register",
             json={
@@ -55,12 +56,21 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "email": email,
                 "password": password,
             },
+            headers=headers,
         )
         self.assertEqual(response.status_code, 201)
+
+    def csrf_headers(self, client=None, seed_path="/"):
+        """Return a valid CSRF header after seeding the session through a GET request."""
+        active_client = client or self.client
+        active_client.get(seed_path, follow_redirects=True)
+        with active_client.session_transaction() as session_data:
+            return {"X-CSRF-Token": session_data["csrf_token"]}
 
     def create_medication(self, name="Ibuprofen", dosage="200mg", client=None):
         """Create a medication for the active test user."""
         active_client = client or self.client
+        headers = self.csrf_headers(client=active_client)
         return active_client.post(
             "/api/medications",
             json={
@@ -70,11 +80,13 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "photo_path": "",
                 "notes": "Take after meals",
             },
+            headers=headers,
         )
 
     def create_schedule(self, medication_id, client=None, **overrides):
         """Create a schedule for the active test user."""
         active_client = client or self.client
+        headers = self.csrf_headers(client=active_client)
         # These defaults represent the common recurring schedule case, with
         # per-test overrides for edge cases like one-time reminders.
         payload = {
@@ -91,6 +103,7 @@ class MedicationReminderAppTests(unittest.TestCase):
         return active_client.post(
             "/api/schedules",
             json=payload,
+            headers=headers,
         )
 
     def test_init_db_preserves_existing_data_without_reset(self):
@@ -126,11 +139,15 @@ class MedicationReminderAppTests(unittest.TestCase):
         response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+        self.assertIn("default-src 'self'", response.headers["Content-Security-Policy"])
 
     def test_page_routes_for_authenticated_and_guest_users(self):
         """Page routes should render or redirect based on session state."""
         home_response = self.client.get("/")
         self.assertEqual(home_response.status_code, 200)
+        self.assertIn('meta name="csrf-token"', home_response.get_data(as_text=True))
 
         login_page_response = self.client.get("/login")
         self.assertEqual(login_page_response.status_code, 200)
@@ -161,6 +178,7 @@ class MedicationReminderAppTests(unittest.TestCase):
 
     def test_registration_and_login(self):
         """A registered user should be able to log out and log back in."""
+        register_headers = self.csrf_headers(seed_path="/register")
         register_response = self.client.post(
             "/api/auth/register",
             json={
@@ -168,19 +186,23 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "email": "student1@example.com",
                 "password": "password123",
             },
+            headers=register_headers,
         )
         self.assertEqual(register_response.status_code, 201)
-        self.client.post("/api/auth/logout")
+        self.client.post("/api/auth/logout", headers=self.csrf_headers())
 
+        login_headers = self.csrf_headers(seed_path="/login")
         login_response = self.client.post(
             "/api/auth/login",
             json={"username": "student1", "password": "password123"},
+            headers=login_headers,
         )
         self.assertEqual(login_response.status_code, 200)
         self.assertEqual(login_response.get_json()["user"]["email"], "student1@example.com")
 
     def test_auth_validation_and_profile_access(self):
         """Auth routes should validate input and restrict profile access."""
+        register_headers = self.csrf_headers(seed_path="/register")
         invalid_register_response = self.client.post(
             "/api/auth/register",
             json={
@@ -188,6 +210,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "email": "invalid-email",
                 "password": "short",
             },
+            headers=register_headers,
         )
         self.assertEqual(invalid_register_response.status_code, 400)
 
@@ -196,12 +219,15 @@ class MedicationReminderAppTests(unittest.TestCase):
 
         self.register_and_login()
 
+        login_headers = self.csrf_headers(seed_path="/login")
         bad_login_response = self.client.post(
             "/api/auth/login",
             json={"username": "", "password": ""},
+            headers=login_headers,
         )
         self.assertEqual(bad_login_response.status_code, 400)
 
+        duplicate_username_headers = self.csrf_headers(seed_path="/")
         duplicate_username_response = self.client.post(
             "/api/auth/register",
             json={
@@ -209,9 +235,11 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "email": "student2@example.com",
                 "password": "password123",
             },
+            headers=duplicate_username_headers,
         )
         self.assertEqual(duplicate_username_response.status_code, 409)
 
+        duplicate_email_headers = self.csrf_headers(seed_path="/")
         duplicate_email_response = self.client.post(
             "/api/auth/register",
             json={
@@ -219,6 +247,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "email": "student1@example.com",
                 "password": "password123",
             },
+            headers=duplicate_email_headers,
         )
         self.assertEqual(duplicate_email_response.status_code, 409)
 
@@ -248,6 +277,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "photo_path": "",
                 "notes": "Updated dosage",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(update_response.status_code, 200)
         self.assertEqual(update_response.get_json()["medication"]["dosage"], "400mg")
@@ -265,6 +295,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "photo_path": "",
                 "notes": "",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(invalid_medication_response.status_code, 400)
 
@@ -277,6 +308,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "photo_path": "",
                 "notes": "",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(missing_medication_response.status_code, 404)
 
@@ -286,10 +318,16 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(len(list_response.get_json()["medications"]), 1)
 
-        delete_response = self.client.delete(f"/api/medications/{medication_id}")
+        delete_response = self.client.delete(
+            f"/api/medications/{medication_id}",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(delete_response.status_code, 200)
 
-        delete_missing_response = self.client.delete(f"/api/medications/{medication_id}")
+        delete_missing_response = self.client.delete(
+            f"/api/medications/{medication_id}",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(delete_missing_response.status_code, 404)
 
     def test_create_schedule_and_mark_taken(self):
@@ -301,7 +339,11 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(schedule_response.status_code, 201)
         schedule_id = schedule_response.get_json()["schedule"]["id"]
 
-        take_response = self.client.patch(f"/api/schedules/{schedule_id}/take", json={})
+        take_response = self.client.patch(
+            f"/api/schedules/{schedule_id}/take",
+            json={},
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(take_response.status_code, 200)
         updated_schedule = take_response.get_json()["schedule"]
         self.assertEqual(updated_schedule["status"], "pending")
@@ -329,6 +371,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "",
                 "reminder_status": "invalid",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(invalid_schedule_response.status_code, 400)
 
@@ -343,6 +386,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "",
                 "reminder_status": "enabled",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(invalid_medication_id_response.status_code, 400)
 
@@ -357,6 +401,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "2099-01-01",
                 "reminder_status": "enabled",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(invalid_date_range_response.status_code, 400)
 
@@ -371,6 +416,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "",
                 "reminder_status": "enabled",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(invalid_time_response.status_code, 400)
 
@@ -404,6 +450,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "2099-01-09",
                 "reminder_status": "disabled",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(update_response.status_code, 200)
         self.assertEqual(update_response.get_json()["schedule"]["frequency"], "weekly")
@@ -419,6 +466,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "2099-01-09",
                 "reminder_status": "enabled",
             },
+            headers=self.csrf_headers(),
         )
         self.assertEqual(missing_schedule_update.status_code, 404)
 
@@ -434,16 +482,23 @@ class MedicationReminderAppTests(unittest.TestCase):
         skip_response = self.client.patch(
             f"/api/schedules/{skipped_schedule_id}/skip",
             json={},
+            headers=self.csrf_headers(),
         )
         self.assertEqual(skip_response.status_code, 200)
         skipped_schedule_data = skip_response.get_json()["schedule"]
         self.assertEqual(skipped_schedule_data["status"], "pending")
         self.assertEqual(skipped_schedule_data["scheduled_date"], "2026-04-12")
 
-        delete_response = self.client.delete(f"/api/schedules/{schedule_id}")
+        delete_response = self.client.delete(
+            f"/api/schedules/{schedule_id}",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(delete_response.status_code, 200)
 
-        delete_missing_response = self.client.delete(f"/api/schedules/{schedule_id}")
+        delete_missing_response = self.client.delete(
+            f"/api/schedules/{schedule_id}",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(delete_missing_response.status_code, 404)
 
     def test_upcoming_and_notifications_use_system_clock(self):
@@ -465,7 +520,10 @@ class MedicationReminderAppTests(unittest.TestCase):
         self.assertEqual(upcoming_response.status_code, 200)
         self.assertEqual(len(upcoming_response.get_json()["schedules"]), 1)
 
-        notification_response = self.client.post("/api/test/trigger-notifications")
+        notification_response = self.client.post(
+            "/api/test/trigger-notifications",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(notification_response.status_code, 200)
         self.assertEqual(notification_response.get_json()["triggered_count"], 0)
 
@@ -484,7 +542,11 @@ class MedicationReminderAppTests(unittest.TestCase):
         )
         schedule_id = schedule_response.get_json()["schedule"]["id"]
 
-        take_response = self.client.patch(f"/api/schedules/{schedule_id}/take", json={})
+        take_response = self.client.patch(
+            f"/api/schedules/{schedule_id}/take",
+            json={},
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(take_response.status_code, 200)
         self.assertEqual(take_response.get_json()["schedule"]["status"], "taken")
 
@@ -525,6 +587,7 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "photo_path": "",
                 "notes": "",
             },
+            headers=self.csrf_headers(client=second_client),
         )
         self.assertEqual(missing_medication_update.status_code, 404)
 
@@ -539,26 +602,44 @@ class MedicationReminderAppTests(unittest.TestCase):
                 "end_date": "2099-01-09",
                 "reminder_status": "enabled",
             },
+            headers=self.csrf_headers(client=second_client),
         )
         self.assertEqual(missing_schedule_update.status_code, 404)
 
         self.assertEqual(
-            second_client.patch(f"/api/schedules/{schedule_id}/take", json={}).status_code,
+            second_client.patch(
+                f"/api/schedules/{schedule_id}/take",
+                json={},
+                headers=self.csrf_headers(client=second_client),
+            ).status_code,
             404,
         )
-        self.assertEqual(second_client.delete(f"/api/medications/{medication_id}").status_code, 404)
-        self.assertEqual(second_client.delete(f"/api/schedules/{schedule_id}").status_code, 404)
+        self.assertEqual(
+            second_client.delete(
+                f"/api/medications/{medication_id}",
+                headers=self.csrf_headers(client=second_client),
+            ).status_code,
+            404,
+        )
+        self.assertEqual(
+            second_client.delete(
+                f"/api/schedules/{schedule_id}",
+                headers=self.csrf_headers(client=second_client),
+            ).status_code,
+            404,
+        )
 
     def test_protected_routes_require_authentication(self):
         """Protected JSON routes should reject unauthenticated access consistently."""
+        headers = self.csrf_headers(seed_path="/login")
         protected_requests = [
             self.client.get("/api/medications"),
             self.client.get("/api/schedules"),
             self.client.get("/api/history"),
             self.client.get("/api/notifications"),
-            self.client.post("/api/medications", json={}),
-            self.client.post("/api/schedules", json={}),
-            self.client.post("/api/test/trigger-notifications"),
+            self.client.post("/api/medications", json={}, headers=headers),
+            self.client.post("/api/schedules", json={}, headers=headers),
+            self.client.post("/api/test/trigger-notifications", headers=headers),
         ]
 
         for response in protected_requests:
@@ -582,11 +663,17 @@ class MedicationReminderAppTests(unittest.TestCase):
         )
         self.assertEqual(schedule_response.status_code, 201)
 
-        notification_response = self.client.post("/api/test/trigger-notifications")
+        notification_response = self.client.post(
+            "/api/test/trigger-notifications",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(notification_response.status_code, 200)
         self.assertEqual(notification_response.get_json()["triggered_count"], 2)
 
-        repeat_notification_response = self.client.post("/api/test/trigger-notifications")
+        repeat_notification_response = self.client.post(
+            "/api/test/trigger-notifications",
+            headers=self.csrf_headers(),
+        )
         self.assertEqual(repeat_notification_response.status_code, 200)
         self.assertEqual(repeat_notification_response.get_json()["triggered_count"], 0)
 
@@ -594,6 +681,19 @@ class MedicationReminderAppTests(unittest.TestCase):
         notifications = notifications_response.get_json()["notifications"]
         self.assertEqual(len(notifications), 2)
         self.assertTrue(any(item["type"] == "email" for item in notifications))
+
+    def test_csrf_protection_blocks_missing_token(self):
+        """Unsafe API routes should reject requests that do not include the CSRF token."""
+        response = self.client.post(
+            "/api/auth/register",
+            json={
+                "username": "student1",
+                "email": "student1@example.com",
+                "password": "password123",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"], "Invalid or missing CSRF token.")
 
 
 if __name__ == "__main__":

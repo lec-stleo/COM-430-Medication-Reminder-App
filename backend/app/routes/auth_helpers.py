@@ -1,10 +1,13 @@
 """Shared helpers for session-backed authentication checks."""
 
 from functools import wraps
+import secrets
 
-from flask import jsonify, session
+from flask import jsonify, request, session
 
 from ..services.auth_service import get_user_by_id
+
+CSRF_SESSION_KEY = "csrf_token"
 
 
 def get_session_user():
@@ -24,6 +27,25 @@ def get_session_user():
 def has_active_session():
     """Return True when the active session belongs to an existing user."""
     return get_session_user() is not None
+
+
+def get_csrf_token():
+    """Return the active CSRF token, generating one when the session lacks it."""
+    token = session.get(CSRF_SESSION_KEY)
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session[CSRF_SESSION_KEY] = token
+    return token
+
+
+def validate_csrf_request():
+    """Return a JSON error response tuple when the CSRF token is missing or invalid."""
+    expected_token = session.get(CSRF_SESSION_KEY)
+    provided_token = request.headers.get("X-CSRF-Token")
+
+    if not expected_token or not provided_token or provided_token != expected_token:
+        return jsonify({"error": "Invalid or missing CSRF token."}), 400
+    return None
 
 
 def login_required(view_function):

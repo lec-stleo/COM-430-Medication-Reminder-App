@@ -39,6 +39,7 @@ def register():
 
     user_id = create_user(username, email, password)
     session["user_id"] = user_id
+    session.permanent = True
     current_app.logger.info("New user registered: %s", username)
 
     return jsonify(
@@ -64,6 +65,7 @@ def login():
         return jsonify({"error": "Invalid username or password."}), 401
 
     session["user_id"] = user["id"]
+    session.permanent = True
     current_app.logger.info("User logged in: %s", username)
     return jsonify(
         {

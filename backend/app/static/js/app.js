@@ -1,9 +1,21 @@
+function getCsrfToken() {
+    if (typeof document === "undefined") {
+        return "";
+    }
+
+    return document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
+}
+
 async function apiRequest(url, options = {}) {
     // Centralize fetch behavior so every dashboard action gets the same
     // headers, session handling, and JSON error parsing.
+    const csrfToken = getCsrfToken();
     const response = await fetch(url, {
         headers: {
             "Content-Type": "application/json",
+            ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
             ...(options.headers || {}),
         },
         credentials: "same-origin",
@@ -695,13 +707,37 @@ async function loadDashboard() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const authForm = document.querySelector("[data-auth-form]");
-    if (authForm) {
-        handleAuthForm(authForm, authForm.dataset.authForm);
-    }
+if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", () => {
+        const authForm = document.querySelector("[data-auth-form]");
+        if (authForm) {
+            handleAuthForm(authForm, authForm.dataset.authForm);
+        }
 
-    if (document.getElementById("medicationForm")) {
-        loadDashboard();
-    }
-});
+        if (document.getElementById("medicationForm")) {
+            loadDashboard();
+        }
+    });
+}
+
+const testHooks = {
+    apiRequest,
+    getCsrfToken,
+    medicationOptions,
+    createEmptyState,
+    createMedicationEditForm,
+    createScheduleEditForm,
+    renderMedicationCards,
+    renderScheduleCards,
+    renderUpcomingScheduleCards,
+    renderHistoryCards,
+    renderNotificationCards,
+};
+
+if (typeof window !== "undefined") {
+    window.__appTestHooks = testHooks;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = testHooks;
+}
