@@ -72,10 +72,11 @@ The final submission closes the main gaps from the audit:
 - history and notification logs store the exact occurrence date/time
 - dashboard editing uses inline forms instead of `prompt()`
 - dashboard content is rendered safely through DOM APIs instead of raw HTML interpolation
+- browser state-changing requests are protected with CSRF tokens and security headers
 - authentication/session helper logic is centralized
 - database initialization is non-destructive by default
 - schema `CHECK` constraints were expanded
-- automated tests now include malformed input, protected-route access, and multi-user isolation
+- automated tests now include malformed input, protected-route access, multi-user isolation, and frontend UI checks
 - workflow automation was updated to current GitHub Actions versions compatible with Node 24
 
 ## Business Requirements

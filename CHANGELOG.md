@@ -8,9 +8,10 @@ The final submission completes the project with:
 
 - recurring schedule behavior for daily and weekly reminders
 - safer dashboard rendering and inline edit forms
+- CSRF protection, secure session defaults, and response security headers
 - centralized auth/session helpers
 - safer database initialization and stronger schema constraints
-- expanded tests and updated submission documentation
+- expanded backend and frontend tests
 
 ## Version 2
 
