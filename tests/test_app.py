@@ -12,12 +12,11 @@ from backend.app.db import get_db, init_db
 from backend.app.time_utils import current_schedule_time
 
 
-class MedicationReminderAppTests(unittest.TestCase):
-    """End-to-end and route-level tests for the application."""
+class MedicationReminderAppTestCase(unittest.TestCase):
+    """Shared setup and helpers for application test cases."""
 
     def setUp(self):
         """Create an isolated app instance backed by a temporary SQLite file."""
-        # Every test gets its own SQLite file so route and workflow tests stay isolated.
         self.resource_stack = ExitStack()
         self.addCleanup(self.resource_stack.close)
         self.temp_dir = self.resource_stack.enter_context(tempfile.TemporaryDirectory())
@@ -87,8 +86,6 @@ class MedicationReminderAppTests(unittest.TestCase):
         """Create a schedule for the active test user."""
         active_client = client or self.client
         headers = self.csrf_headers(client=active_client)
-        # These defaults represent the common recurring schedule case, with
-        # per-test overrides for edge cases like one-time reminders.
         payload = {
             "medication_id": medication_id,
             "scheduled_date": "2026-04-10",
@@ -105,6 +102,10 @@ class MedicationReminderAppTests(unittest.TestCase):
             json=payload,
             headers=headers,
         )
+
+
+class AppInfrastructureTests(MedicationReminderAppTestCase):
+    """Infrastructure, health, and page route coverage."""
 
     def test_init_db_preserves_existing_data_without_reset(self):
         """init_db should create missing tables without dropping existing rows."""
@@ -175,6 +176,10 @@ class MedicationReminderAppTests(unittest.TestCase):
 
         dashboard_response = self.client.get("/dashboard")
         self.assertEqual(dashboard_response.status_code, 200)
+
+
+class AuthenticationTests(MedicationReminderAppTestCase):
+    """Authentication and access-control tests."""
 
     def test_registration_and_login(self):
         """A registered user should be able to log out and log back in."""
@@ -260,6 +265,39 @@ class MedicationReminderAppTests(unittest.TestCase):
         forbidden_profile_response = self.client.get("/api/auth/student2")
         self.assertEqual(forbidden_profile_response.status_code, 403)
 
+    def test_protected_routes_require_authentication(self):
+        """Protected JSON routes should reject unauthenticated access consistently."""
+        headers = self.csrf_headers(seed_path="/login")
+        protected_requests = [
+            self.client.get("/api/medications"),
+            self.client.get("/api/schedules"),
+            self.client.get("/api/history"),
+            self.client.get("/api/notifications"),
+            self.client.post("/api/medications", json={}, headers=headers),
+            self.client.post("/api/schedules", json={}, headers=headers),
+            self.client.post("/api/test/trigger-notifications", headers=headers),
+        ]
+
+        for response in protected_requests:
+            self.assertEqual(response.status_code, 401)
+
+    def test_csrf_protection_blocks_missing_token(self):
+        """Unsafe API routes should reject requests that do not include the CSRF token."""
+        response = self.client.post(
+            "/api/auth/register",
+            json={
+                "username": "student1",
+                "email": "student1@example.com",
+                "password": "password123",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"], "Invalid or missing CSRF token.")
+
+
+class MedicationTests(MedicationReminderAppTestCase):
+    """Medication CRUD and ownership tests."""
+
     def test_add_and_edit_medication(self):
         """A user can add a medication and update it later."""
         self.register_and_login()
@@ -329,6 +367,10 @@ class MedicationReminderAppTests(unittest.TestCase):
             headers=self.csrf_headers(),
         )
         self.assertEqual(delete_missing_response.status_code, 404)
+
+
+class ScheduleTests(MedicationReminderAppTestCase):
+    """Schedule lifecycle, notification, and isolation tests."""
 
     def test_create_schedule_and_mark_taken(self):
         """Recurring schedules advance after a dose is marked as taken."""
@@ -629,22 +671,6 @@ class MedicationReminderAppTests(unittest.TestCase):
             404,
         )
 
-    def test_protected_routes_require_authentication(self):
-        """Protected JSON routes should reject unauthenticated access consistently."""
-        headers = self.csrf_headers(seed_path="/login")
-        protected_requests = [
-            self.client.get("/api/medications"),
-            self.client.get("/api/schedules"),
-            self.client.get("/api/history"),
-            self.client.get("/api/notifications"),
-            self.client.post("/api/medications", json={}, headers=headers),
-            self.client.post("/api/schedules", json={}, headers=headers),
-            self.client.post("/api/test/trigger-notifications", headers=headers),
-        ]
-
-        for response in protected_requests:
-            self.assertEqual(response.status_code, 401)
-
     def test_trigger_notifications(self):
         """A due schedule should produce simulated notification log entries."""
         self.register_and_login()
@@ -681,19 +707,6 @@ class MedicationReminderAppTests(unittest.TestCase):
         notifications = notifications_response.get_json()["notifications"]
         self.assertEqual(len(notifications), 2)
         self.assertTrue(any(item["type"] == "email" for item in notifications))
-
-    def test_csrf_protection_blocks_missing_token(self):
-        """Unsafe API routes should reject requests that do not include the CSRF token."""
-        response = self.client.post(
-            "/api/auth/register",
-            json={
-                "username": "student1",
-                "email": "student1@example.com",
-                "password": "password123",
-            },
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.get_json()["error"], "Invalid or missing CSRF token.")
 
 
 if __name__ == "__main__":
